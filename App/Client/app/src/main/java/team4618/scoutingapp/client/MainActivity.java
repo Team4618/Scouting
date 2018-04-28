@@ -245,6 +245,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     //we've sucessfully verified and connected
+                    System.out.println("verified");
                     connected = true;
                 }
             }
@@ -335,6 +336,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else {
                 //make object into string and send it on its way
+                System.out.println("sending");
                 out.write(obj.toString().getBytes());
             }
         } catch (JSONException ex) {
