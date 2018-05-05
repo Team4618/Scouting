@@ -2,17 +2,19 @@ import json
 import socket
 from os import path, makedirs
 from sys import argv
-from thread import start_new_thread
+from threading import Thread
+from tkFileDialog import askdirectory
 
 import bluetooth
 from enum import Enum
+from tkinter import *
 
 
 # enums
 class NetworkingType(Enum):
-    hotSpot = 0
-    BT = 1
-    none = 2
+    hotSpot = "Hotspot"
+    BT = "Bluetooth"
+    none = "None"
 
 
 # static vars
@@ -24,22 +26,21 @@ folder = "files"
 verification = "4618 SCOUTING APP"
 
 
-def main():
+def main(args=[], gui=False):
     global folder, netType
-    if len(argv) > 1:
-        if argv[1].lower == "hotspot":
-            netType = NetworkingType.hotSpot
-        elif argv[1].lower == "bt" or argv[1].lower == "bluetooth":
-            netType = NetworkingType.BT
-        elif argv[1].lower == "none":
-            netType = NetworkingType.none
+    if not gui:
+        if len(args) < 1:
+            args = argv
 
-    if len(argv) > 2:
-        folder = argv[2]
+        for i in NetworkingType:
+            if args[1].lower() == i.value:
+                netType = i
+
+        if len(args) > 2:
+            folder = args[2]
 
     if not path.isdir(folder):
         makedirs(folder)
-
     if netType == NetworkingType.none:
         print "No need for a server, just collect the JSON files from the devices at the end of the day."
     elif netType == NetworkingType.hotSpot:
@@ -59,7 +60,7 @@ def mainHotSpot():
         print "Waiting for connection..."
         conn, adress = tcpSocket.accept()
         print "Connection recived"
-        start_new_thread(handleConnection, (conn,))
+        Thread(target=handleConnection, args=(conn,)).start()
 
 
 def mainBT():
@@ -76,7 +77,7 @@ def mainBT():
         print "Waiting for connection..."
         conn, info = btSocket.accept()
         print "Connection Recived"
-        start_new_thread(handleConnection, (conn,))
+        Thread(target=handleConnection, args=(conn,)).start()
 
 
 def handleConnection(s):
@@ -148,4 +149,89 @@ def handleConnection(s):
 
 
 if __name__ == '__main__':
-    main()
+    # this is the file being executed, run our gui
+    # setup tk
+    root = Tk()  # window
+    root.title("Scouting server")
+
+    # all of our output that would normally go on console will go here
+    outputScrollBar = Scrollbar(root)
+    outputScrollBar.grid(row=0, column=1, rowspan=999, sticky=NS)
+
+    output = Text(root, background="black", foreground="white", yscrollcommand=outputScrollBar.set)
+    output.grid(row=0, column=0, rowspan=999)
+    outputScrollBar.config(command=output.yview)
+
+    #####
+
+    # Select file and display name
+    outputDirFrame = Frame(root, borderwidth=5)
+    outputDir = StringVar()
+    outputDir.set("No folder selcted")
+
+
+    def trimFileDir():
+        fileDir = askdirectory()  # opens file chooser window
+        if len(fileDir) > 25:
+            fileDir = "..." + fileDir[-25:]  # last 22 chars of the string
+        return fileDir
+
+
+    choseFileBtn = Button(outputDirFrame, text="Choose folder to save files",
+                          command=lambda: outputDir.set(trimFileDir()))
+    choseFileBtn.pack()
+
+    Label(outputDirFrame, textvariable=outputDir).pack()
+
+    outputDirFrame.grid(row=0, column=2)
+
+    #####
+
+    # radio buttons for networking mode
+    def setNetType(type):
+        global netType
+        netType = type
+
+
+    netTypeContainer = Frame(root)
+    Label(netTypeContainer, text="Networking Type").pack()
+    # can't do these in a for loop because it won't actually change netType
+    Radiobutton(netTypeContainer, text=NetworkingType.BT.value, variable=netType, value=NetworkingType.BT,
+                indicatoron=0, command=lambda: setNetType(NetworkingType.BT)).pack()  # Bluetooth
+    Radiobutton(netTypeContainer, text=NetworkingType.hotSpot.value, variable=netType, value=NetworkingType.hotSpot,
+                indicatoron=0, command=lambda: setNetType(NetworkingType.hotSpot)).pack()  # Hotspot
+    Radiobutton(netTypeContainer, text=NetworkingType.none.value, variable=netType, value=NetworkingType.none,
+                indicatoron=0, command=lambda: setNetType(NetworkingType.none)).pack()  # None
+
+    netTypeContainer.grid(row=0, column=3)
+
+    #####
+
+    # start button
+    clicked = False
+    def startBtnClick():
+        global clicked
+        if not clicked:
+            Thread(target=main, args=([], True)).start()
+            clicked=True
+    Button(root, text="Start", command=startBtnClick).grid(row=1, column=2,
+        columnspan=2, sticky=EW)
+
+    #####
+
+    # overload stdout (print) to our gui
+    class TextRedirector(object):
+        def __init__(self, widget, tag="stdout"):
+            self.widget = widget
+            self.tag = tag
+
+        def write(self, str):
+            self.widget.insert(END, str)
+
+    sys.stdout = TextRedirector(output, "stdout")
+    sys.stderr = TextRedirector(output, "stderr")
+    print  # hangs without this (idk why)
+
+    #####
+
+    root.mainloop()
