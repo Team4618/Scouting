@@ -10,50 +10,43 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.format.Formatter;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
+import team4618.scoutingapp.client.Views.*;
 
 import java.io.*;
-import java.net.Inet4Address;
-import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import static android.view.View.TEXT_ALIGNMENT_CENTER;
+
 public class MainActivity extends AppCompatActivity {
     static final int port = 4618;
-    static Socket mainSocket;
-
-    BluetoothSocket serverBTSocket;
-    static ArrayList<String> MACs = new ArrayList<>();
     static final UUID uuid = UUID.fromString("cb3bd26c-4436-11e8-842f-0ed5f89f718b");
-
     static final String verification = "4618 SCOUTING APP";
+    static JSONArray MACs = new JSONArray();
     static InputStream in;
     static OutputStream out;
     static Boolean connected;
-
-
     static int requestPermsCode;
     static int[] grantResults;
     static Boolean canWrite = false;
-
-    enum networkingType {
-        hotSpot,
-        BT,
-        none
-    }
-
     static networkingType netType;
+    static String tag = "Scouting";
+    BluetoothSocket serverBTSocket;
+    ArrayList<QuestionView> questions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,27 +57,32 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_select_mode);
         setTitle("Select Networking Mode");
 
-        //update MAC adress whitelist
-        MACs.clear();
-        MACs.add("08:D4:0C:E8:AA:43");
+        //update MAC address whitelist
 
-        if (new File(getFilesDir(), "MAC.txt").exists()) {
+        File MACFile = new File(getFilesDir(), "MAC.json");
+        if (MACFile.exists()) {
             try {
-                FileInputStream fis = openFileInput("MAC.txt");
+                FileInputStream fis = new FileInputStream(MACFile);
 
-                byte[] buffer = new byte[1024];
+                BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+                StringBuilder sb = new StringBuilder();
+                String line;
 
-                while (fis.read(buffer) != -1) {
-                    for (String i : new String(buffer).trim().split("\\r?\\n")) {
-                        MACs.add(i);
-                    }
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                    sb.append('\n');
                 }
 
+                MACs = (JSONArray) new JSONTokener(sb.toString()).nextValue();
+
+                br.close();
                 fis.close();
 
             } catch (FileNotFoundException ex) {
                 ex.printStackTrace();
             } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (JSONException ex) {
                 ex.printStackTrace();
             }
         }
@@ -99,29 +97,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void selectModeHotSpot(View view) {
-        netType = networkingType.hotSpot;
-        goToMain();
-    }
-
     public void selectModeBT(View view) {
         netType = networkingType.BT;
-        goToMain();
-    }
-
-    public void selectModeNone(View view) {
-        netType = networkingType.none;
-        goToMain();
-    }
-
-    public void btnOptions(View view) {
-        startActivity(new Intent(this, optionsMenu.class));
-    }
-
-    void goToMain() {
-        setContentView(R.layout.activity_main);
-        setTitle("Scouting");
-
         connected = false;
         new Thread(new Runnable() {
             @Override
@@ -131,19 +108,136 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    public void tallyUp(View view) {
-        TextView text = (TextView) ((LinearLayout) view.getParent()).getChildAt(0);
-        int tally = Integer.parseInt(text.getText().toString());
-        tally++;
-        text.setText(Integer.toString(tally));
+    public void selectModeNone(View view) {
+        netType = networkingType.none;
+        connected = false;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                connect();
+            }
+        }).start();
     }
 
-    public void tallyDown(View view) {
-        TextView text = (TextView) ((LinearLayout) view.getParent()).getChildAt(0);
-        int tally = Integer.parseInt(text.getText().toString());
-        if (tally > 0)
-            tally--;
-        text.setText(Integer.toString(tally));
+    public void btnOptions(View view) {
+        startActivity(new Intent(this, optionsMenu.class));
+    }
+
+    void goToMain() {
+        setContentView(R.layout.activity_main);
+        setTitle("Scouting");
+    }
+
+    void loadTemplate(final JSONArray template) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Context context = getApplicationContext();
+
+                //create layout and set it up
+                final LinearLayout ll = new LinearLayout(getApplicationContext());
+
+                ll.setOrientation(LinearLayout.VERTICAL);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT);
+                params.gravity = Gravity.CENTER_HORIZONTAL;
+                ll.setLayoutParams(params);
+
+                questions = new ArrayList<>();
+
+                try {
+                    for (int i = 0; i < template.length(); i++) {
+                        JSONObject obj = template.getJSONObject(i);
+
+                        switch (obj.getString("type")) {
+                            default:
+                                break;
+
+                            case "header":
+                                TextView header = new TextView(context);
+                                header.setText(obj.getString("label"));
+                                header.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+                                header.setTextAlignment(TEXT_ALIGNMENT_CENTER);
+                                header.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                                        LinearLayout.LayoutParams.WRAP_CONTENT));
+
+                                ll.addView(header);
+                                break;
+
+                            case "space":
+                                Space space = new Space(context);
+
+                                //convert dps to pixels
+                                float density = context.getResources().getDisplayMetrics().density;
+                                int pixels = (int) (obj.getInt("size") * density + 0.5f);
+
+                                space.setLayoutParams(new LinearLayout.LayoutParams(0, pixels));
+
+                                ll.addView(space);
+                                break;
+
+                            case "rdoBtn":
+                                //get the array of options
+                                JSONArray options = obj.getJSONArray("options");
+                                String[] optionsStr = new String[options.length()];
+
+                                for (int j = 0; j < options.length(); j++) {
+                                    optionsStr[j] = (String) options.get(j);
+                                }
+
+                                radioButton rb = new radioButton(context, obj.getString("question"), obj.getString("jsonLabel"), optionsStr);
+                                ll.addView(rb);
+                                questions.add(rb);
+                                break;
+
+                            case "chck":
+                                checkbox chk = new checkbox(context, obj.getString("question"), obj.getString("jsonLabel"));
+                                ll.addView(chk);
+                                questions.add(chk);
+                                break;
+
+                            case "tallyInt":
+                                tallyInt ti = new tallyInt(context, obj.getString("question"), obj.getString("jsonLabel"));
+                                ll.addView(ti);
+                                questions.add(ti);
+                                break;
+
+                            case "int":
+                                intInput ii = new intInput(context, obj.getString("question"), obj.getInt("maxChars"), obj.getString("jsonLabel"));
+                                ll.addView(ii);
+                                questions.add(ii);
+                                break;
+
+                            case "str":
+                                strInput si = new strInput(context, obj.getString("question"), obj.getInt("maxChars"), obj.getString("jsonLabel"));
+                                ll.addView(si);
+                                questions.add(si);
+                                break;
+                        }
+                    }
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
+                }
+
+                //add submit button
+                final Button submit = new Button(context);
+                submit.setText
+                        ("Submit");
+                submit.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        submit(null);
+                    }
+                });
+                submit.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                ll.addView(submit);
+
+                goToMain();
+
+                ScrollView questionsContainer = findViewById(R.id.questionsContainer);
+                questionsContainer.addView(ll);
+            }
+        });
     }
 
     public void connect() {
@@ -162,25 +256,16 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
             connected = true;
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    setContentView(R.layout.activity_main_defualt);
+                    setTitle("Scouting");
+                }
+            });
             return;
-        } else if (netType == networkingType.hotSpot) {
-            //get ip
-            WifiManager wifi = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-            String ip = Formatter.formatIpAddress(wifi.getConnectionInfo().getIpAddress());
 
-            String serverIP = ip.substring(0, ip.lastIndexOf('.') + 1);
-            serverIP += '1';
-
-            try {
-                System.out.println("trying to connect");
-                mainSocket = new Socket(Inet4Address.getByName(serverIP), port);
-                System.out.println("connected");
-                out = mainSocket.getOutputStream();
-                in = mainSocket.getInputStream();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-                return;
-            }
         } else if (netType == networkingType.BT) {
             BluetoothAdapter btAdapter = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
 
@@ -192,8 +277,14 @@ public class MainActivity extends AppCompatActivity {
 
             BluetoothDevice server = null;
             for (BluetoothDevice i : btAdapter.getBondedDevices()) {
-                if (MACs.contains(i.getAddress())) {
-                    server = i;
+                try {
+                    for (int j = 0; j < MACs.length(); j++) {
+                        if (MACs.get(j).equals(i.getAddress())) {
+                            server = i;
+                        }
+                    }
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
                 }
             }
 
@@ -225,28 +316,83 @@ public class MainActivity extends AppCompatActivity {
             out.write(verification.getBytes());
             long end = System.currentTimeMillis() + 3000;
             while (System.currentTimeMillis() < end) {
-                byte[] buffer = new byte[1024];
-                int read = in.read(buffer);
+                byte[] buffer;
 
-                if (read == -1) { //we'll try again when we submit
-                    System.out.println("Closed connection");
-                    connected = false;
+                try {
+                    buffer = new byte[1024];
+                    int read = in.read(buffer);
+                    if (read == -1) { //we'll try again when we submit
+                        System.out.println("Closed connection");
+                        connected = false;
+                        return;
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
                     return;
-                } else if (read > 0) {
+                }
+
+                if (buffer.length > 0) {
                     String strRead = new String(buffer).trim();
 
                     if (!strRead.equals(verification)) {
                         //we'll try again when we submit
-                        if (netType == networkingType.hotSpot) {
-                            mainSocket.close();
-                        } else if (netType == networkingType.BT) {
-                            serverBTSocket.close();
-                        }
+                        System.out.println("Verification unsuccessful");
+                        serverBTSocket.close();
                     }
 
                     //we've sucessfully verified and connected
                     System.out.println("verified");
                     connected = true;
+                    break;
+                }
+            }
+
+            if (connected) {
+                boolean recived = false;
+                String template = "";
+                while (!recived) {
+
+                    int len;
+                    while (true) {
+                        byte[] buffer = new byte[4];
+                        int read = in.read(buffer);
+
+                        if (read == -1) { //we'll try again when we submit
+                            System.out.println("Closed connection");
+                            connected = false;
+                            return;
+                        } else if (read > 0) {
+                            len = (ByteBuffer.wrap(buffer)).getInt();
+                            break;
+                        }
+                    }
+
+                    while (template.length() < len) {
+                        byte[] buffer = new byte[len];
+                        int read = in.read(buffer);
+
+                        if (read == -1) { //we'll try again when we submit
+                            System.out.println("Closed connection");
+                            connected = false;
+                            return;
+                        } else if (read > 0) {
+                            template += new String(buffer).trim();
+                        }
+                    }
+
+                    //make sure there's no corruption, check end and beginning
+                    if (template.startsWith("[{\"") && template.endsWith("\"}]")) {
+                        recived = true;
+                    }
+
+                    //send if everything was recived properly
+                    out.write((byte) (recived ? 'Y' : 'N'));
+                }
+
+                try {
+                    loadTemplate(new JSONArray(template));
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
                 }
             }
         } catch (IOException ex) {
@@ -348,174 +494,212 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void tallyUp(View view) {
+        TextView text = (TextView) ((LinearLayout) view.getParent()).getChildAt(0);
+        int tally = Integer.parseInt(text.getText().toString());
+        tally++;
+        text.setText(Integer.toString(tally));
+    }
+
+    public void tallyDown(View view) {
+        TextView text = (TextView) ((LinearLayout) view.getParent()).getChildAt(0);
+        int tally = Integer.parseInt(text.getText().toString());
+        if (tally > 0)
+            tally--;
+        text.setText(Integer.toString(tally));
+    }
+
     JSONObject getDataAsJSON() {
         JSONObject obj = new JSONObject();
+        if (netType == networkingType.none) {
 
-        final ArrayList<View> invalidViews = new ArrayList<>();
+            final ArrayList<View> invalidViews = new ArrayList<>();
 
-        try {
+            try {
 
-            //this is gonna be fun
-            //this should be done in a for loop but i would proabably have to write custom views and i don't want to
-            //TODO: write custom views and put this stuff in a for loop
-            switch (((RadioGroup) findViewById(R.id.rdoSide)).getCheckedRadioButtonId()) { //get the data for the side we start on
-                case R.id.btnLeft:
-                    obj.put("startingSide", "left");
-                    break;
-                case R.id.btnCentre:
-                    obj.put("startingSide", "centre");
-                    break;
-                case R.id.btnRight:
-                    obj.put("startingSide", "right");
-                    break;
-                case -1: //nothing is checked
-                    invalidViews.add(findViewById(R.id.btnLeft));
-                    invalidViews.add(findViewById(R.id.btnCentre));
-                    invalidViews.add(findViewById(R.id.btnRight));
-                    break;
-                default:
-                    break;
+                //this is gonna be fun
+                //this should be done in a for loop but i would proabably have to write custom views and i don't want to
+                //TODO: write custom views and put this stuff in a for loop
+                switch (((RadioGroup) findViewById(R.id.rdoSide)).getCheckedRadioButtonId()) { //get the data for the side we start on
+                    case R.id.btnLeft:
+                        obj.put("startingSide", "left");
+                        break;
+                    case R.id.btnCentre:
+                        obj.put("startingSide", "centre");
+                        break;
+                    case R.id.btnRight:
+                        obj.put("startingSide", "right");
+                        break;
+                    case -1: //nothing is checked
+                        invalidViews.add(findViewById(R.id.btnLeft));
+                        invalidViews.add(findViewById(R.id.btnCentre));
+                        invalidViews.add(findViewById(R.id.btnRight));
+                        break;
+                    default:
+                        break;
+                }
+
+                String toPut;
+                obj.put("crossAutoLine", ((CheckBox) findViewById(R.id.chckCrossAutoLine)).isChecked());
+
+                toPut = ((TextView) findViewById(R.id.countTxtAutoSwitch)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.countTxtAutoSwitch));
+                else
+                    obj.put("autoCubesSwitch", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.countTxtAutoScale)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.countTxtAutoScale));
+                else
+                    obj.put("autoCubesScale", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.countTxtAutoVault)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.countTxtAutoVault));
+                else
+                    obj.put("autoCubesVault", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.countTxtTeleopScale)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.countTxtTeleopScale));
+                else
+                    obj.put("teleopCubesScale", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.countTxtTeleopSwitch)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.countTxtTeleopSwitch));
+                else
+                    obj.put("teleopCubesSwitch", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.countTxtTeleopVault)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.countTxtAutoVault));
+                else
+                    obj.put("teleopCubesVault", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.countTxtDropedCubes)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.countTxtDropedCubes));
+                else
+                    obj.put("droppedCubes", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.countTxtDefenseCubes)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.countTxtDefenseCubes));
+                else
+                    obj.put("defenseCubes", Integer.parseInt(toPut));
+
+                obj.put("attemptedClimb", ((CheckBox) findViewById(R.id.chckClimbAttempt)).isChecked());
+
+                obj.put("helpedClimb", ((CheckBox) findViewById(R.id.chckHelpClimb)).isChecked());
+
+                obj.put("climbed", ((CheckBox) findViewById(R.id.chckSucessfulyClimb)).isChecked());
+
+                obj.put("brokeDown", ((CheckBox) findViewById(R.id.chckBreakDown)).isChecked());
+
+                toPut = ((TextView) findViewById(R.id.rateScaleNumber)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.rateScaleNumber));
+                else
+                    obj.put("rateScale", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.rateSwitchNumber)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.rateSwitchNumber));
+                else
+                    obj.put("rateSwitch", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.rateOverallNumber)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.rateOverallNumber));
+                else
+                    obj.put("rateBot", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.matchRobot)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.matchRobot));
+                else
+                    obj.put("robot", Integer.parseInt(toPut));
+
+                toPut = ((TextView) findViewById(R.id.matchNumber)).getText().toString();
+                if (toPut.equals(""))
+                    invalidViews.add(findViewById(R.id.matchNumber));
+                else
+                    obj.put("match", Integer.parseInt(((EditText) findViewById(R.id.matchNumber)).getText().toString()));
+
+                obj.put("comments", ((EditText) findViewById(R.id.commentsEditTxt)).getText().toString());
+            } catch (JSONException ex) {
+                ex.printStackTrace();
             }
 
-            String toPut;
-            obj.put("crossAutoLine", ((CheckBox) findViewById(R.id.chckCrossAutoLine)).isChecked());
+            if (invalidViews.size() > 0) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (View i : invalidViews) {
+                            i.getBackground().setColorFilter(Color.RED, PorterDuff.Mode.DARKEN); //add a red background to invalid views
+                            //this doesn't work for the radio buttons though
+                        }
 
-            toPut = ((TextView) findViewById(R.id.countTxtAutoSwitch)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.countTxtAutoSwitch));
-            else
-                obj.put("autoCubesSwitch", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.countTxtAutoScale)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.countTxtAutoScale));
-            else
-                obj.put("autoCubesScale", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.countTxtAutoVault)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.countTxtAutoVault));
-            else
-                obj.put("autoCubesVault", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.countTxtTeleopScale)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.countTxtTeleopScale));
-            else
-                obj.put("teleopCubesScale", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.countTxtTeleopSwitch)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.countTxtTeleopSwitch));
-            else
-                obj.put("teleopCubesSwitch", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.countTxtTeleopVault)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.countTxtAutoVault));
-            else
-                obj.put("teleopCubesVault", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.countTxtDropedCubes)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.countTxtDropedCubes));
-            else
-                obj.put("droppedCubes", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.countTxtDefenseCubes)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.countTxtDefenseCubes));
-            else
-                obj.put("defenseCubes", Integer.parseInt(toPut));
-
-            obj.put("attemptedClimb", ((CheckBox) findViewById(R.id.chckClimbAttempt)).isChecked());
-
-            obj.put("helpedClimb", ((CheckBox) findViewById(R.id.chckHelpClimb)).isChecked());
-
-            obj.put("climbed", ((CheckBox) findViewById(R.id.chckSucessfulyClimb)).isChecked());
-
-            toPut = ((TextView) findViewById(R.id.rateScaleNumber)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.rateScaleNumber));
-            else
-                obj.put("rateScale", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.rateSwitchNumber)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.rateSwitchNumber));
-            else
-                obj.put("rateSwitch", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.rateOverallNumber)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.rateOverallNumber));
-            else
-                obj.put("rateBot", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.matchRobot)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.matchRobot));
-            else
-                obj.put("robot", Integer.parseInt(toPut));
-
-            toPut = ((TextView) findViewById(R.id.matchNumber)).getText().toString();
-            if (toPut.equals(""))
-                invalidViews.add(findViewById(R.id.matchNumber));
-            else
-                obj.put("match", Integer.parseInt(((EditText) findViewById(R.id.matchNumber)).getText().toString()));
-
-            obj.put("comments", ((EditText) findViewById(R.id.commentsEditTxt)).getText().toString());
-        } catch (JSONException ex) {
-            ex.printStackTrace();
-        }
-
-        if (invalidViews.size() > 0) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    for (View i : invalidViews) {
-                        i.getBackground().setColorFilter(Color.RED, PorterDuff.Mode.DARKEN); //add a red background to invalid views
-                        //this doesn't work for the radio buttons though
+                        Toast.makeText(getApplicationContext(), "Some things weren't filled in. Please" +
+                                " fill them in then try again", Toast.LENGTH_SHORT).show();
                     }
-
-                    Toast.makeText(getApplicationContext(), "Some things weren't filled in. Please" +
-                            " fill them in then try again", Toast.LENGTH_SHORT).show();
-                }
-            });
-            return null;
+                });
+                return null;
+            } else {
+                //redraw the whole view to set everything to the default value
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setContentView(R.layout.activity_main);
+                    }
+                });
+            }
         } else {
-            //redraw the whole view to set everything to the default value
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    setContentView(R.layout.activity_main);
+            try {
+                for (final QuestionView i : questions) {
+                    obj.put(i.getJSONLabel(), i.getValue());
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            i.resetValues();
+                        }
+                    });
                 }
-            });
-            return obj;
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
         }
+
+        return obj;
     }
 
     @Override
     public void onBackPressed() {
-        setContentView(R.layout.activity_select_mode);
-        setTitle("Select Networking Mode");
         if (connected) {
             try {
-                if (netType == networkingType.hotSpot) {
-                    mainSocket.close();
-                } else if (netType == networkingType.BT) {
-                    serverBTSocket.close();
-                }
-            }catch (IOException ex) {
+                serverBTSocket.close();
+            } catch (IOException ex) {
                 ex.printStackTrace();
             }
+
+            connected = false;
         }
-        //super.onBackPressed(); //this closes the app for some reason...?
+
+        setContentView(R.layout.activity_select_mode);
+        setTitle("Select Networking Mode");
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         //this should be okay as the only permissions we're requesting is write
         canWrite = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+    }
+
+    enum networkingType {
+        BT,
+        none
     }
 }

@@ -8,37 +8,34 @@
         tools:context="team4618.scoutingapp.client.MainActivity">
 
     <Button
-            android:text="HotSpot"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/btnSelectHotSpot"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toStartOf="@+id/btnSelectBT"
-            app:layout_constraintBaseline_toBaselineOf="@+id/btnSelectBT"
-            android:onClick="selectModeHotSpot"/>
-    <Button
             android:text="Bluetooth"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:id="@+id/btnSelectBT"
-            app:layout_constraintStart_toEndOf="@+id/btnSelectHotSpot" app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             android:layout_marginTop="8dp" app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginBottom="8dp" app:layout_constraintVertical_bias="0.3"
-            android:onClick="selectModeBT"/>
+            android:layout_marginBottom="8dp" app:layout_constraintVertical_bias="0.302"
+            android:onClick="selectModeBT"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            app:layout_constraintHorizontal_bias="0.2"/>
     <Button
             android:text="None"
             android:layout_width="wrap_content"
-            android:layout_height="44dp" android:id="@+id/btnSelectNone"
-            app:layout_constraintStart_toStartOf="@+id/btnSelectHotSpot" android:layout_marginStart="8dp"
+            android:layout_height="wrap_content" android:id="@+id/btnSelectNone"
             app:layout_constraintTop_toTopOf="parent" android:layout_marginTop="8dp"
             app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="8dp"
-            android:onClick="selectModeNone" app:layout_constraintStart_toEndOf="@+id/btnOptions"
-            app:layout_constraintEnd_toEndOf="@+id/btnSelectHotSpot"/>
+            android:onClick="selectModeNone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintVertical_bias="0.3" android:layout_marginStart="8dp"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            app:layout_constraintHorizontal_bias="0.8"/>
     <Button
-            android:text="Options"
+            android:text="Adress List"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:id="@+id/btnOptions"
-            app:layout_constraintBaseline_toBaselineOf="@+id/btnSelectNone"
+            android:onClick="btnOptions"
             app:layout_constraintEnd_toEndOf="@+id/btnSelectBT" android:layout_marginEnd="8dp"
-            app:layout_constraintStart_toStartOf="@+id/btnSelectBT" android:layout_marginStart="8dp"
-            android:onClick="btnOptions"/>
+            app:layout_constraintStart_toStartOf="@+id/btnSelectNone" android:layout_marginStart="8dp"
+            app:layout_constraintTop_toTopOf="parent" android:layout_marginTop="8dp"
+            app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="8dp"/>
 </android.support.constraint.ConstraintLayout>
