@@ -10,8 +10,8 @@ from uuid import getnode
 
 import bluetooth
 from enum import Enum
-from tkinter import *
 from pyqrcode import create as createQR
+from tkinter import *
 
 
 # enums
@@ -263,6 +263,21 @@ if __name__ == '__main__':
 
 
     Button(root, text="Start", command=startBtnClick).grid(row=1, column=2, columnspan=2, sticky=EW)
+
+    #####
+
+    # textbox to set verification
+    def setVerification(*args):
+        global verification
+        verification = verificationText.get()
+        print verification
+
+
+    verificationText = StringVar()
+    verificationText.set(verification)
+    verificationText.trace("w", setVerification)
+    verificationTextBox = Entry(root, textvariable=verificationText)
+    verificationTextBox.grid(row=3, column=2)
 
 
     #####

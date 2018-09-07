@@ -15,6 +15,8 @@ import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -35,7 +37,7 @@ import static android.view.View.TEXT_ALIGNMENT_CENTER;
 public class MainActivity extends AppCompatActivity {
     static final int port = 4618;
     static final UUID uuid = UUID.fromString("cb3bd26c-4436-11e8-842f-0ed5f89f718b");
-    static final String verification = "4618 SCOUTING APP";
+    static String verification = "4618 SCOUTING APP";
     static JSONArray MACs = new JSONArray();
     static InputStream in;
     static OutputStream out;
@@ -56,6 +58,29 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_select_mode);
         setTitle("Select Networking Mode");
+
+        //set a text box that we can change verification with
+        EditText verificationTV = findViewById(R.id.verification);
+        verificationTV.addTextChangedListener(new TextWatcher() {
+            //before and after text changed are left blank because idc about them, ontextchanged is what we want
+
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                verification = charSequence.toString();
+                System.out.println(verification);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+        verificationTV.setText(verification);
 
         //update MAC address whitelist
 
