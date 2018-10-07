@@ -17,6 +17,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -35,7 +36,6 @@ import java.util.UUID;
 import static android.view.View.TEXT_ALIGNMENT_CENTER;
 
 public class MainActivity extends AppCompatActivity {
-    static final int port = 4618;
     static final UUID uuid = UUID.fromString("cb3bd26c-4436-11e8-842f-0ed5f89f718b");
     static String verification = "4618 SCOUTING APP";
     static JSONArray MACs = new JSONArray();
@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 verification = charSequence.toString();
-                System.out.println(verification);
+                Log.d(tag, verification);
             }
 
             @Override
@@ -347,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
                     buffer = new byte[1024];
                     int read = in.read(buffer);
                     if (read == -1) { //we'll try again when we submit
-                        System.out.println("Closed connection");
+                        Log.d(tag, "Closed connection");
                         connected = false;
                         return;
                     }
@@ -361,12 +361,12 @@ public class MainActivity extends AppCompatActivity {
 
                     if (!strRead.equals(verification)) {
                         //we'll try again when we submit
-                        System.out.println("Verification unsuccessful");
+                        Log.d(tag, "Verification unsuccessful");
                         serverBTSocket.close();
                     }
 
                     //we've sucessfully verified and connected
-                    System.out.println("verified");
+                    Log.d(tag, "verified");
                     connected = true;
                     break;
                 }
@@ -383,7 +383,7 @@ public class MainActivity extends AppCompatActivity {
                         int read = in.read(buffer);
 
                         if (read == -1) { //we'll try again when we submit
-                            System.out.println("Closed connection");
+                            Log.d(tag, "Closed connection");
                             connected = false;
                             return;
                         } else if (read > 0) {
@@ -397,7 +397,7 @@ public class MainActivity extends AppCompatActivity {
                         int read = in.read(buffer);
 
                         if (read == -1) { //we'll try again when we submit
-                            System.out.println("Closed connection");
+                            Log.d(tag, "Closed connection");
                             connected = false;
                             return;
                         } else if (read > 0) {
@@ -486,8 +486,6 @@ public class MainActivity extends AppCompatActivity {
                         }
                         fis.close();
 
-                        System.out.println(matchFileContent);
-
                         try {
                             matchArray = new JSONArray(matchFileContent);
                         } catch (JSONException ex) {
@@ -507,7 +505,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else {
                 //make object into string and send it on its way
-                System.out.println("sending");
+                Log.d(tag, "sending");
                 out.write(obj.toString().getBytes());
             }
         } catch (JSONException ex) {
