@@ -20,11 +20,12 @@ verification = "4618 SCOUTING APP"
 
 def main(args=[], gui=False):
     global folder, netType
-    if not gui:
-        if len(args) < 1:
+    if not gui:  # we're not running our gui, probably being called from a different file
+
+        if len(args) < 1:  # probably running from command line, we should use argv
             args = argv
 
-        if len(args) > 1:
+        if len(args) > 1:  # grab the directory where we're going to save our files
             folder = args[1]
 
     if not path.isdir(folder):
@@ -34,20 +35,21 @@ def main(args=[], gui=False):
 
 
 def startBT():
-    global serverSocket
+    global socket
     print "Creating BT socket"
 
-    btSocket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-    btSocket.bind(('', bluetooth.PORT_ANY))
-    serverSocket = btSocket
-    btSocket.listen(10)
+    socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+    socket.bind(('', bluetooth.PORT_ANY))
 
-    bluetooth.advertise_service(btSocket, "4618 Scouting Server", service_id=uuid, service_classes=[uuid, bluetooth.
+    socket.listen(10)  # will accept max 10 connections at a time
+
+    # tell other devices about our service, providing UUID and specifying a serial connection
+    bluetooth.advertise_service(socket, "4618 Scouting Server", service_id=uuid, service_classes=[uuid, bluetooth.
                                 SERIAL_PORT_CLASS], profiles=[bluetooth.SERIAL_PORT_PROFILE])
 
     while 1:
         print "Waiting for connection..."
-        conn = btSocket.accept()[0]
+        conn = socket.accept()[0]
         print "Connection received"
         Thread(target=handleConnection, args=(conn,)).start()
 
@@ -140,6 +142,7 @@ def handleConnection(s):
 
         match = str(msgJSON["match"])
 
+        # check if the json file for that match already exists, and if it doesn't, make it
         jArray = [msgJSON]
         if path.isfile(folder + "/" + match + ".json"):
             with open(folder + "/" + match + ".json", "r") as f:
@@ -219,10 +222,12 @@ if __name__ == '__main__':
         if not clicked:
             Thread(target=main, args=([], True)).start()
             clicked = True
+            startButton.grid_remove()
 
 
-    Button(root, text="Start", command=startBtnClick).grid(row=1, column=2, columnspan=2, sticky=EW)
+    startButton = Button(root, text="Start", command=startBtnClick)
 
+    startButton.grid(row=1, column=2, columnspan=2, sticky=EW)
 
     #####
 
@@ -237,7 +242,6 @@ if __name__ == '__main__':
     verificationText.trace("w", setVerification)
     verificationTextBox = Entry(root, textvariable=verificationText)
     verificationTextBox.grid(row=3, column=2)
-
 
     #####
 
@@ -258,4 +262,4 @@ if __name__ == '__main__':
 
     root.mainloop()
 
-    serverSocket.close()
+    socket.close()
