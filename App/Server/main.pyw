@@ -9,7 +9,9 @@ from uuid import getnode
 
 import bluetooth
 from pyqrcode import create as createQR
-from tkinter import *
+from Tkinter import *
+from ttk import *
+
 
 # static vars
 uuid = "cb3bd26c-4436-11e8-842f-0ed5f89f718b"
