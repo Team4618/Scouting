@@ -8,12 +8,16 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -49,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
     static String tag = "Scouting";
     BluetoothSocket serverBTSocket;
     ArrayList<QuestionView> questions;
+    static int enableBTRequest = 0;
+    static int imageCaptureRequest = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,6 +148,53 @@ public class MainActivity extends AppCompatActivity {
                 connect();
             }
         }).start();
+    }
+
+    public void selctModePit(View view) {
+        setContentView(R.layout.activity_pit_scouting);
+        setTitle("Pit Scouting");
+    }
+
+    public void takePicture(View view) {
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) return;
+
+        Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePicture.resolveActivity(getPackageManager()) != null) {
+            //get link to our documents folder, then our scouting
+            File docs = Environment.getExternalStorageDirectory();
+            File dir = new File(new File(docs, "pit scouting"), "img");
+
+            //create our folder if it doesn't already exist
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            File imageFile = null;
+            try {
+                String teamNumber = ((EditText)findViewById(R.id.matchRobotPit)).getText().toString().substring(0, 4); //get team #
+                imageFile = new File(dir, teamNumber + ".jpg");
+                imageFile.createNewFile();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (IllegalArgumentException ex) { //most likely team number isn't filled in
+                ex.printStackTrace();
+            } catch (StringIndexOutOfBoundsException ex) { //same as above
+                ex.printStackTrace();
+            }
+
+            if (imageFile != null) {
+                Uri photoUri = FileProvider.getUriForFile(this, "team4618.scoutingapp.client.fileprovider",
+                        imageFile);
+
+                takePicture.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+                startActivityForResult(takePicture, imageCaptureRequest);
+            }
+        }
+    }
+
+    public void submitPit(View view) {
+        //this is where we would pull all our values from the pit layout, but honestly we're not going to use the data
+        //so I don't really care
     }
 
     public void btnOptions(View view) {
@@ -295,9 +348,9 @@ public class MainActivity extends AppCompatActivity {
             BluetoothAdapter btAdapter = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
 
             if (btAdapter == null || !btAdapter.isEnabled()) {
-                int enableBtRequest = 0;
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, enableBtRequest);
+                startActivityForResult(enableBtIntent, enableBTRequest);
+                return;
             }
 
             BluetoothDevice server = null;
@@ -719,6 +772,17 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         //this should be okay as the only permissions we're requesting is write
         canWrite = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == imageCaptureRequest && resultCode == RESULT_OK) {
+            Bitmap pictureThumb = (Bitmap)data.getExtras().get("data");
+
+            ImageView imageView = findViewById(R.id.robotImagePit);
+            imageView.setImageBitmap(pictureThumb);
+            imageView.setVisibility(View.VISIBLE);
+        }
     }
 
     enum networkingType {
