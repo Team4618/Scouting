@@ -57,7 +57,10 @@ class scoutingUI:
         global clicked
         clicked = False
 
-        self.startButton = Button(self.page, text="Start", command=self.startBtnClick)
+        self.startButtonText = StringVar()
+        self.startButtonText.set("Start")
+
+        self.startButton = Button(self.page, textvariable=self.startButtonText, command=self.startBtnClick)
 
         self.startButton.grid(row=1, column=2, columnspan=2, sticky=EW)
 
@@ -77,10 +80,15 @@ class scoutingUI:
 
     def startBtnClick(self):
         global clicked
-        if not clicked:
+        if clicked:
+            socket.close()
+            clicked = False
+            self.startButtonText.set("Start")
+        else:
             Thread(target=startBT).start()
             clicked = True
-            self.startButton.grid_remove()
+            self.startButtonText.set("Stop")
+
 
 
 def printtoGUI(obj):
