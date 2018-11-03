@@ -4,14 +4,13 @@ from re import findall as findallRe
 from struct import pack as stpack
 from sys import argv
 from threading import Thread
-from tkFileDialog import askdirectory
+from tkinter import *
+from tkinter.filedialog import askdirectory
+from tkinter.ttk import *
 from uuid import getnode
 
 import bluetooth
 from pyqrcode import create as createQR
-from Tkinter import *
-from ttk import *
-
 
 # static vars
 uuid = "cb3bd26c-4436-11e8-842f-0ed5f89f718b"
@@ -38,7 +37,7 @@ def main(args=[], gui=False):
 
 def startBT():
     global socket
-    print "Creating BT socket"
+    print("Creating BT socket")
 
     socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
     socket.bind(('', bluetooth.PORT_ANY))
@@ -50,12 +49,12 @@ def startBT():
                                 SERIAL_PORT_CLASS], profiles=[bluetooth.SERIAL_PORT_PROFILE])
 
     while 1:
-        print "Waiting for connection..."
+        print("Waiting for connection...")
         conn = socket.accept()[0]
-        print "Connection received"
+        print("Connection received")
         Thread(target=handleConnection, args=(conn,)).start()
 
-    btSocket.close()
+    socket.close()
 
 
 def handleConnection(s):
@@ -67,16 +66,16 @@ def handleConnection(s):
 
         if not data:
             # data is null
-            print "Connection closed remotely"
+            print("Connection closed remotely")
             s.close()
             return
 
         if data != verification:
-            print "Verification unsuccessful, closing"
+            print("Verification unsuccessful, closing")
             s.close()
             return
 
-        print "Verification successful"
+        print("Verification successful")
         s.send(verification)  # send verification back
         break
 
@@ -100,7 +99,7 @@ def handleConnection(s):
 
             if not data:
                 # data is null
-                print "Connection closed remotely"
+                print("Connection closed remotely")
                 s.close()
                 return
 
@@ -121,7 +120,7 @@ def handleConnection(s):
         if data == lastRead:
             if lastReadEquals:
                 # safe to assume the connection was closed
-                print "Connection closed remotely"
+                print("Connection closed remotely")
                 s.close()
                 return
 
@@ -139,7 +138,7 @@ def handleConnection(s):
         try:
             msgJSON = json.loads(data)
         except ValueError:
-            print "Message not JSON formatted: " + data
+            print("Message not JSON formatted: " + data)
             continue
 
         match = str(msgJSON["match"])
@@ -157,7 +156,7 @@ def handleConnection(s):
         with open(folder + "/" + match + ".json", "wb") as f:
             json.dump(jArray, f, indent=4)
 
-        print "Wrote data to " + match + ".json"
+        print("Wrote data to " + match + ".json")
 
 
 if __name__ == '__main__':
@@ -203,8 +202,8 @@ if __name__ == '__main__':
 
     # get MAC address, which might be BT address (works in 1 test so far)
     # taken from www.geeksforgeeks.org/extracting-mac-address-using-python/, method 3
-    adrr = ":".join(findallRe('..', '%012x' % getnode())).upper()
-
+    adrr = ":".join(findallRe('..', '%012x' % getnode())).encode().upper()
+    
     # create qr code from address
     qr = createQR(adrr)
 
@@ -212,6 +211,7 @@ if __name__ == '__main__':
     qrBm = BitmapImage(data=qr.xbm(scale=5))
     qrBm.config(background="white")
     Label(root, image=qrBm).grid(row=2, column=2)
+    Label(root, text=adrr).grid(row=3, column=2)
 
     #####
 
@@ -243,7 +243,7 @@ if __name__ == '__main__':
     verificationText.set(verification)
     verificationText.trace("w", setVerification)
     verificationTextBox = Entry(root, textvariable=verificationText)
-    verificationTextBox.grid(row=3, column=2)
+    verificationTextBox.grid(row=4, column=2)
 
     #####
 

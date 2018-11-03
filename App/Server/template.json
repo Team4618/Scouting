@@ -1,6 +1,22 @@
 [
   {
     "type": "header",
+    "label": "Robot info"
+  },
+  {
+    "type": "int",
+    "jsonLabel": "robot",
+    "question": "Robot #",
+    "maxChars": 4
+  },
+  {
+    "type": "int",
+    "jsonLabel": "match",
+    "question": "Match #",
+    "maxChars": 3
+  },
+  {
+    "type": "header",
     "label": "Auto"
   },
   {
@@ -109,18 +125,6 @@
     "jsonLabel": "rateBot",
     "question": "What would you rate the robot overall?(/10)",
     "maxChars": 2
-  },
-  {
-    "type": "int",
-    "jsonLabel": "robot",
-    "question": "Robot #",
-    "maxChars": 4
-  },
-  {
-    "type": "int",
-    "jsonLabel": "match",
-    "question": "Match #",
-    "maxChars": 3
   },
   {
     "type": "str",

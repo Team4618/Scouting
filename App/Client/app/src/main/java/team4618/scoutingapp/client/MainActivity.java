@@ -419,7 +419,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 while (btAdapter.isDiscovering()) {
                 }
-                System.out.println("done discovery");
             }
 
             if (server == null) {
@@ -502,8 +501,10 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     while (template.length() < len) {
+                        System.out.println("looping");
                         byte[] buffer = new byte[len];
                         int read = in.read(buffer);
+                        System.out.println("looping 2");
 
                         if (read == -1) { //we'll try again when we submit
                             Log.d(tag, "Closed connection");
@@ -515,13 +516,16 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     //make sure there's no corruption, check end and beginning
-                    if (template.startsWith("[{\"") && template.endsWith("\"}]")) {
+                    System.out.println(template);
+                    if (template.startsWith("[{") && template.endsWith("}]")) {
                         recived = true;
                     }
 
                     //send if everything was recived properly
                     out.write((byte) (recived ? 'Y' : 'N'));
                 }
+
+                System.out.println("recived");
 
                 try {
                     loadTemplate(new JSONArray(template));
