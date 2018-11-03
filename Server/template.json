@@ -1,0 +1,135 @@
+[
+  {
+    "type": "header",
+    "label": "Robot info"
+  },
+  {
+    "type": "int",
+    "jsonLabel": "robot",
+    "question": "Robot #",
+    "maxChars": 4
+  },
+  {
+    "type": "int",
+    "jsonLabel": "match",
+    "question": "Match #",
+    "maxChars": 3
+  },
+  {
+    "type": "header",
+    "label": "Auto"
+  },
+  {
+    "type": "rdoBtn",
+    "jsonLabel": "startingSide",
+    "question": "What side did the robot start on?",
+    "options": [
+      "Left",
+      "Center",
+      "Right"
+    ]
+  },
+  {
+    "type": "chck",
+    "jsonLabel": "crossAutoLine",
+    "question": "Robot crossed auto line"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "autoCubesSwitch",
+    "question": "How many cubes did the robot put in the switch?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "autoCubesScale",
+    "question": "How many cubes did the robot put in the scale?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "autoCubesVault",
+    "question": "How many cubes did the robot put in the vault?"
+  },
+  {
+    "type": "space",
+    "size": 40
+  },
+  {
+    "type": "header",
+    "label": "Teleop"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "teleopCubesScale",
+    "question": "How many cubes did the robot put in the scale?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "teleopCubesSwitch",
+    "question": "How many cubes did the robot put in the switch?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "teleopCubesVault",
+    "question": "How many cubes did the robot put in the vault?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "droppedCubes",
+    "question": "How many cubes did the robot drop?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "defenseCubes",
+    "question": "How many cubes did the robot score playing defense?"
+  },
+  {
+    "type": "chck",
+    "jsonLabel": "attemptedClimb",
+    "question": "Robot attempted to climb"
+  },
+  {
+    "type": "chck",
+    "jsonLabel": "helpedClimb",
+    "question": "Robot helped another robot climb"
+  },
+  {
+    "type": "chck",
+    "jsonLabel": "climbed",
+    "question": "Robot successfully climbed"
+  },
+  {
+    "type": "chck",
+    "jsonLabel": "brokeDown",
+    "question": "Robot tipped, broke down or lost COMMS"
+  },
+  {
+    "type": "int",
+    "jsonLabel": "rateScale",
+    "question": "What would you rate the robot's ability to score using the scale?(/10)",
+    "maxChars": 2
+  },
+  {
+    "type": "int",
+    "jsonLabel": "rateSwitch",
+    "question": "What would you rate the robot's ability to score using the switch?(/10)",
+    "maxChars": 2
+  },
+  {
+    "type": "int",
+    "jsonLabel": "rateVault",
+    "question": "What would you rate the robot's ability to score using the vault?(/10)",
+    "maxChars": 2
+  },
+  {
+    "type": "int",
+    "jsonLabel": "rateBot",
+    "question": "What would you rate the robot overall?(/10)",
+    "maxChars": 2
+  },
+  {
+    "type": "str",
+    "jsonLabel": "comments",
+    "question": "Comments",
+    "maxChars" : -1
+  }
+]
