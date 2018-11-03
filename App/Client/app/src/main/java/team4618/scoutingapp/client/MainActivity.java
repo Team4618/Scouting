@@ -5,8 +5,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -55,6 +57,9 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<QuestionView> questions;
     static int enableBTRequest = 0;
     static int imageCaptureRequest = 1;
+    BluetoothDevice server = null;
+    BluetoothAdapter btAdapter = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,34 +94,8 @@ public class MainActivity extends AppCompatActivity {
         verificationTV.setText(verification);
 
         //update MAC address whitelist
+        MACs = readJson();
 
-        File MACFile = new File(getFilesDir(), "MAC.json");
-        if (MACFile.exists()) {
-            try {
-                FileInputStream fis = new FileInputStream(MACFile);
-
-                BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-                StringBuilder sb = new StringBuilder();
-                String line;
-
-                while ((line = br.readLine()) != null) {
-                    sb.append(line);
-                    sb.append('\n');
-                }
-
-                MACs = (JSONArray) new JSONTokener(sb.toString()).nextValue();
-
-                br.close();
-                fis.close();
-
-            } catch (FileNotFoundException ex) {
-                ex.printStackTrace();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            } catch (JSONException ex) {
-                ex.printStackTrace();
-            }
-        }
         canWrite = ContextCompat.checkSelfPermission(this, Manifest.permission.
                 WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED; //check if we can write
 
@@ -125,7 +104,36 @@ public class MainActivity extends AppCompatActivity {
             //selects yes or no
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.
                     WRITE_EXTERNAL_STORAGE}, requestPermsCode);
+    }
 
+    public JSONArray readJson() {
+        //reads the JSON file containing our MAC addresses
+        File MACFile = new File(getFilesDir(), "MAC.json");
+        JSONArray jArray = new JSONArray();
+
+        try {
+            MACFile.createNewFile();
+            InputStream is = new FileInputStream(MACFile);
+
+            int size = is.available();
+            byte[] buffer = new byte[size];
+
+            is.read(buffer);
+            is.close();
+
+            String jArrayStr = new String(buffer, "UTF-8");
+
+            if (jArrayStr.length() > 0) {
+                jArray = new JSONArray(jArrayStr);
+            }
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+        }
+
+        return jArray;
     }
 
     public void selectModeBT(View view) {
@@ -318,6 +326,30 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Create a BroadcastReceiver for ACTION_FOUND.
+    //https://developer.android.com/guide/topics/connectivity/bluetooth#java
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                System.out.println("we found a boi");
+
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+                for (int j = 0; j < MACs.length(); j++) {
+                    try {
+                        if (MACs.get(j).equals(device.getAddress())) {
+                            server = device;
+                            btAdapter.cancelDiscovery();
+                        }
+                    } catch (JSONException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        }
+    };
+
     public void connect() {
         if (netType == networkingType.none) {
             canWrite = ContextCompat.checkSelfPermission(this, Manifest.permission.
@@ -345,7 +377,7 @@ public class MainActivity extends AppCompatActivity {
             return;
 
         } else if (netType == networkingType.BT) {
-            BluetoothAdapter btAdapter = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
+            btAdapter = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
 
             if (btAdapter == null || !btAdapter.isEnabled()) {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -353,10 +385,14 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            BluetoothDevice server = null;
+            if (btAdapter.isDiscovering()) btAdapter.cancelDiscovery(); //we're already trying
+            server = null;
+
             for (BluetoothDevice i : btAdapter.getBondedDevices()) {
                 try {
                     for (int j = 0; j < MACs.length(); j++) {
+                        System.out.println(i.getAddress());
+                        System.out.println(MACs.get(j));
                         if (MACs.get(j).equals(i.getAddress())) {
                             server = i;
                         }
@@ -364,6 +400,27 @@ public class MainActivity extends AppCompatActivity {
                 } catch (JSONException ex) {
                     ex.printStackTrace();
                 }
+            }
+
+            if (server == null) {
+                if (!btAdapter.isDiscovering()) {
+                    System.out.println("scanning");
+                    btAdapter.startDiscovery();
+                }
+
+                //https://developer.android.com/guide/topics/connectivity/bluetooth#java
+                IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+                registerReceiver(mReceiver, filter);
+
+
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+                while (btAdapter.isDiscovering()) {
+                }
+                System.out.println("done discovery");
             }
 
             if (server == null) {

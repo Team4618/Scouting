@@ -9,8 +9,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.*;
+import com.google.zxing.integration.android.IntentIntegrator;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -59,6 +61,11 @@ public class optionsMenu extends AppCompatActivity {
 
             Intent intent = new Intent("com.google.zxing.client.android.SCAN");
             intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // "PRODUCT_MODE for bar codes
+
+            IntentIntegrator ii = new IntentIntegrator(this);
+            ii.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
+            ii.setPrompt("Scan the MAC barcode");
+            ii.initiateScan();
 
             startActivityForResult(intent, 0);
 
