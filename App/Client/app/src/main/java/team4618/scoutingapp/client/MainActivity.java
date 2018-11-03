@@ -31,7 +31,6 @@ import android.widget.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import team4618.scoutingapp.client.Views.*;
 
 import java.io.*;
@@ -179,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
 
             File imageFile = null;
             try {
-                String teamNumber = ((EditText)findViewById(R.id.matchRobotPit)).getText().toString().substring(0, 4); //get team #
+                String teamNumber = ((EditText) findViewById(R.id.matchRobotPit)).getText().toString().substring(0, 4); //get team #
                 imageFile = new File(dir, teamNumber + ".jpg");
                 imageFile.createNewFile();
             } catch (IOException ex) {
@@ -811,7 +810,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (connected) {
+        if (connected && serverBTSocket != null) {
             try {
                 serverBTSocket.close();
             } catch (IOException ex) {
@@ -827,14 +826,16 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        //this should be okay as the only permissions we're requesting is write
-        canWrite = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+        if (requestCode == enableBTRequest) {
+            canWrite = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+        }
+
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == imageCaptureRequest && resultCode == RESULT_OK) {
-            Bitmap pictureThumb = (Bitmap)data.getExtras().get("data");
+            Bitmap pictureThumb = (Bitmap) data.getExtras().get("data");
 
             ImageView imageView = findViewById(R.id.robotImagePit);
             imageView.setImageBitmap(pictureThumb);

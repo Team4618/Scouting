@@ -1,21 +1,23 @@
 package team4618.scoutingapp.client;
 
-import android.content.Context;
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.*;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public class optionsMenu extends AppCompatActivity {
@@ -23,6 +25,7 @@ public class optionsMenu extends AppCompatActivity {
     ArrayList<String> MACsAL;
     View selectedView;
     int selectedViewPosition;
+    static int cameraPermissions = 2;
 
 
     @Override
@@ -58,18 +61,29 @@ public class optionsMenu extends AppCompatActivity {
     }
 
     public void addAddress(View view) {
-        try {
-            IntentIntegrator ii = new IntentIntegrator(this);
-            ii.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
-            ii.setPrompt("Scan the MAC barcode");
-            ii.initiateScan();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                IntentIntegrator ii = new IntentIntegrator(this);
+                ii.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
+                ii.setPrompt("Scan the MAC barcode");
+                ii.initiateScan();
 
-        } catch (Exception e) {
+            } catch (Exception e) {
 
-            Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
-            Intent marketIntent = new Intent(Intent.ACTION_VIEW,marketUri);
-            startActivity(marketIntent);
+                Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
+                Intent marketIntent = new Intent(Intent.ACTION_VIEW, marketUri);
+                startActivity(marketIntent);
 
+            }
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, cameraPermissions);
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "Please grant camera permission", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 
@@ -116,7 +130,7 @@ public class optionsMenu extends AppCompatActivity {
 
     void writeJson() {
         File f = new File(getFilesDir(), "MAC.json");
-        try (PrintWriter out = new PrintWriter(f)){
+        try (PrintWriter out = new PrintWriter(f)) {
             out.println(MainActivity.MACs.toString());
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
