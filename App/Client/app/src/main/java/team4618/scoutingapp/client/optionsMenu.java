@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.*;
 import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -57,7 +58,7 @@ public class optionsMenu extends AppCompatActivity {
     }
 
     public void addAddress(View view) {
-        try { //taken from https://stackoverflow.com/questions/8831050/android-how-to-read-qr-code-in-my-application
+        try {
             IntentIntegrator ii = new IntentIntegrator(this);
             ii.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
             ii.setPrompt("Scan the MAC barcode");
@@ -75,16 +76,18 @@ public class optionsMenu extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 0) {
+        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
 
-            if (resultCode == RESULT_OK) {
-                String address = data.getStringExtra("SCAN_RESULT").toUpperCase();
+        if (scanResult != null) {
+            String result = scanResult.getContents();
 
-                if (address.split("-").length == 6) {
-                    address = address.replace('-', ':');
+            if (result != null) {
+
+                if (result.split("-").length == 6) {
+                    result = result.replace('-', ':');
                 }
-                MACsAL.add(address);
-                MainActivity.MACs.put(address);
+                MACsAL.add(result);
+                MainActivity.MACs.put(result);
                 listAA.notifyDataSetChanged();
 
                 writeJson();
