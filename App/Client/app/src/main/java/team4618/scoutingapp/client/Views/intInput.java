@@ -49,7 +49,11 @@ public class intInput extends LinearLayout implements QuestionView {
     }
 
     public Integer getValue() {
-        return Integer.parseInt(input.getText().toString());
+        try {
+            return Integer.parseInt(input.getText().toString());
+        } catch (java.lang.NumberFormatException ex) { //they missed a field
+            return 0;
+        }
     }
 
     public String getJSONLabel() {

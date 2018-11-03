@@ -58,16 +58,10 @@ public class optionsMenu extends AppCompatActivity {
 
     public void addAddress(View view) {
         try { //taken from https://stackoverflow.com/questions/8831050/android-how-to-read-qr-code-in-my-application
-
-            Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-            intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // "PRODUCT_MODE for bar codes
-
             IntentIntegrator ii = new IntentIntegrator(this);
             ii.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
             ii.setPrompt("Scan the MAC barcode");
             ii.initiateScan();
-
-            startActivityForResult(intent, 0);
 
         } catch (Exception e) {
 
