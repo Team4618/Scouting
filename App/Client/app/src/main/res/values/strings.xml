@@ -1,4 +1,0 @@
-<resources>
-    <string name="app_name">Client</string>
-    <string-array name="test"><item>Test1</item><item>test2</item></string-array>
-</resources>
