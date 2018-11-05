@@ -9,48 +9,52 @@ headers = {"X-TBA-Auth-Key": apiKey}
 
 def getTeamInfo(teamNumber):
     # returns team name, number, record, etc
-    toReturn = {}
+    try:
+        toReturn = {}
 
-    # get team name
-    teaminfo = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc" + str(teamNumber) +
-                                       "/simple", headers=headers).text)
-    toReturn['teamName'] = teaminfo["nickname"]
+        # get team name
+        teaminfo = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc" + str(teamNumber) +
+                                           "/simple", headers=headers).text)
+        toReturn['teamName'] = teaminfo["nickname"]
 
-    year = datetime.now().year
+        year = datetime.now().year
 
-    # get events team attended and their records
-    events = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc{}/events/{}/simple"
-                                     .format(teamNumber, year), headers=headers).text)
-    eventsStatues = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc{}/events/{}/statuses"
-                                            .format(teamNumber, year), headers=headers).text)
+        # get events team attended and their records
+        events = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc{}/events/{}/simple"
+                                         .format(teamNumber, year), headers=headers).text)
+        eventsStatues = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc{}/events/{}/statuses"
+                                                .format(teamNumber, year), headers=headers).text)
 
-    attendedEvents = {}
+        attendedEvents = {}
 
-    for i in events:
-        # grab their record for that event
-        # check if event hasn't happened
-        if datetime.now() < datetime.strptime(i['start_date'], '%Y-%m-%d'):  # competition happens in the future
-            continue
+        for i in events:
+            # grab their record for that event
+            # check if event hasn't happened
+            if datetime.now() < datetime.strptime(i['start_date'], '%Y-%m-%d'):  # competition happens in the future
+                continue
 
-        # get the record
-        eventStatus = eventsStatues[i['key']]
+            # get the record
+            eventStatus = eventsStatues[i['key']]
 
-        try:
-            losses = eventStatus['qual']['ranking']['record']['losses']
-            ties = eventStatus['qual']['ranking']['record']['ties']
-            wins = eventStatus['qual']['ranking']['record']['wins']
-        except TypeError:  # usually for special events (like special events at districts
-            continue
+            try:
+                losses = eventStatus['qual']['ranking']['record']['losses']
+                ties = eventStatus['qual']['ranking']['record']['ties']
+                wins = eventStatus['qual']['ranking']['record']['wins']
+            except TypeError:  # usually for special events (like special events at districts
+                continue
 
-        attendedEvents[i['name']] = "{}-{}-{}".format(wins, ties, losses)
+            attendedEvents[i['name']] = "{}-{}-{}".format(wins, ties, losses)
 
-    toReturn['attendedEvents'] = attendedEvents
+        toReturn['attendedEvents'] = attendedEvents
 
-    # get teams media
-    defualtPicture = "files/images/default.jpg"
+        # get teams media
+        defualtPicture = "files/images/default.jpg"
 
-    toReturn['media'] = defualtPicture
-    return toReturn
+        toReturn['media'] = defualtPicture
+        return toReturn
+
+    except requests.exceptions.ConnectionError:  # no internet access, or tba is down
+        return None
 
 
 if __name__ == "__main__":

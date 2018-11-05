@@ -30,26 +30,6 @@
     ]
   },
   {
-    "type": "chck",
-    "jsonLabel": "crossAutoLine",
-    "question": "Robot crossed auto line"
-  },
-  {
-    "type": "tallyInt",
-    "jsonLabel": "autoCubesSwitch",
-    "question": "How many cubes did the robot put in the switch?"
-  },
-  {
-    "type": "tallyInt",
-    "jsonLabel": "autoCubesScale",
-    "question": "How many cubes did the robot put in the scale?"
-  },
-  {
-    "type": "tallyInt",
-    "jsonLabel": "autoCubesVault",
-    "question": "How many cubes did the robot put in the vault?"
-  },
-  {
     "type": "space",
     "size": 40
   },

@@ -15,6 +15,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
@@ -390,8 +391,6 @@ public class MainActivity extends AppCompatActivity {
             for (BluetoothDevice i : btAdapter.getBondedDevices()) {
                 try {
                     for (int j = 0; j < MACs.length(); j++) {
-                        System.out.println(i.getAddress());
-                        System.out.println(MACs.get(j));
                         if (MACs.get(j).equals(i.getAddress())) {
                             server = i;
                         }
@@ -440,6 +439,14 @@ public class MainActivity extends AppCompatActivity {
                 in = serverBTSocket.getInputStream();
             } catch (IOException ex) {
                 ex.printStackTrace();
+                Log.e(tag, "Caught error, making toast");
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), "Unable to connect to the server", Toast.LENGTH_SHORT).show();
+                    }
+                });
                 return;
             }
 
@@ -447,6 +454,7 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             out.write(verification.getBytes());
+            out.flush();
             long end = System.currentTimeMillis() + 3000;
             while (System.currentTimeMillis() < end) {
                 byte[] buffer;
@@ -471,6 +479,7 @@ public class MainActivity extends AppCompatActivity {
                         //we'll try again when we submit
                         Log.d(tag, "Verification unsuccessful");
                         serverBTSocket.close();
+                        return;
                     }
 
                     //we've sucessfully verified and connected
@@ -500,22 +509,22 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
+
                     while (template.length() < len) {
-                        System.out.println("looping");
-                        byte[] buffer = new byte[len];
+                        byte[] buffer = new byte[1024];
                         int read = in.read(buffer);
-                        System.out.println("looping 2");
 
                         if (read == -1) { //we'll try again when we submit
                             Log.d(tag, "Closed connection");
                             connected = false;
                             return;
                         } else if (read > 0) {
-                            template += new String(buffer).trim();
+                            template += new String(buffer).replace("\0", "");
                         }
                     }
 
-                    //make sure there's no corruption, check end and beginning
+                    recived = true;
+                    /*//make sure there's no corruption, check end and beginning
                     System.out.println(template);
                     if (template.startsWith("[{") && template.endsWith("}]")) {
                         recived = true;
@@ -523,9 +532,8 @@ public class MainActivity extends AppCompatActivity {
 
                     //send if everything was recived properly
                     out.write((byte) (recived ? 'Y' : 'N'));
+                    out.flush();*/
                 }
-
-                System.out.println("recived");
 
                 try {
                     loadTemplate(new JSONArray(template));
@@ -620,6 +628,7 @@ public class MainActivity extends AppCompatActivity {
                 //make object into string and send it on its way
                 Log.d(tag, "sending");
                 out.write(obj.toString().getBytes());
+                out.flush();
             }
         } catch (JSONException ex) {
             ex.printStackTrace();
@@ -655,7 +664,6 @@ public class MainActivity extends AppCompatActivity {
 
                 //this is gonna be fun
                 //this should be done in a for loop but i would proabably have to write custom views and i don't want to
-                //TODO: write custom views and put this stuff in a for loop
                 switch (((RadioGroup) findViewById(R.id.rdoSide)).getCheckedRadioButtonId()) { //get the data for the side we start on
                     case R.id.btnLeft:
                         obj.put("startingSide", "left");

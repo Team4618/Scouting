@@ -1,13 +1,13 @@
 import json
-from os.path import isfile
-from re import findall as findallRe
+from os import fsencode, fsdecode, listdir, makedirs
+from os.path import isfile, isdir
 from struct import pack as stpack
 from threading import Thread
 from tkinter import *
 from tkinter.ttk import *
-from uuid import getnode
 
 import bluetooth
+import openpyxl as excel
 from pyqrcode import create as createQR
 
 import GUI
@@ -20,7 +20,7 @@ verification = "4618 SCOUTING APP"
 textOutput = None  # this is used to output text. None shouldn't be a problem because its declared in GUI init
 
 
-class scoutingUI:
+class ScoutingUI:
     def __init__(self, parent, *args):
         self.page = Frame(parent)
         parent.add(self.page, text="Scouting")
@@ -38,9 +38,7 @@ class scoutingUI:
 
         #####
 
-        # get MAC address, which might be BT address (works in 1 test so far)
-        # taken from www.geeksforgeeks.org/extracting-mac-address-using-python/, method 3
-        adrr = ":".join(findallRe('..', '%012x' % getnode())).encode().upper()
+        adrr = bluetooth.read_local_bdaddr()[0]
 
         # create qr code from address
         self.qr = createQR(adrr)
@@ -66,13 +64,20 @@ class scoutingUI:
 
         #####
 
+        # verification textbox label
+        Label(self.page, text="Verification:").grid(row=4, column=2)
+
         # textbox to set verification
 
         self.verificationText = StringVar()
         self.verificationText.set(verification)
         self.verificationText.trace("w", self.setVerification)
         verificationTextBox = Entry(self.page, textvariable=self.verificationText)
-        verificationTextBox.grid(row=4, column=2)
+        verificationTextBox.grid(row=5, column=2)
+
+        # generate excel button
+        generateExcelButton = Button(self.page, text="Generate Excel", command=generateExcel)
+        generateExcelButton.grid(row=6, column=2)
 
     def setVerification(self, *args):
         global verification
@@ -81,18 +86,23 @@ class scoutingUI:
     def startBtnClick(self):
         global clicked
         if clicked:
+            printtoGUI("Stopping...")
             socket.close()
+            printtoGUI("Stopped")
             clicked = False
+
+            printtoGUI()
             self.startButtonText.set("Start")
         else:
+            prepExcel()
+
             Thread(target=startBT).start()
             clicked = True
             self.startButtonText.set("Stop")
 
 
-
-def printtoGUI(obj):
-    textOutput.insert(END, obj + '\n')
+def printtoGUI(obj=""):
+    textOutput.insert(END, str(obj) + '\n')
 
 
 def startBT():
@@ -110,7 +120,12 @@ def startBT():
 
     while 1:
         printtoGUI("Waiting for connection...")
-        conn = socket.accept()[0]
+        try:
+            conn = socket.accept()[0]
+        except OSError:  # usually the socket was closed from somewhere else
+            socket.close()
+            return
+
         printtoGUI("Connection received")
         Thread(target=handleConnection, args=(conn,)).start()
 
@@ -150,13 +165,13 @@ def handleConnection(s):
         printtoGUI("sending template")
         # send template with questions in it
         s.send(stpack("!i", len(templateStr)))  # send length of message
-        # sleep(1)  # prevents tcp from merging the length of the message with the actual message
+
         s.send(templateStr)
 
-        # read 1.5: get verification
+        '''# read 1.5: get verification
         while 1:
             # read data
-            data = s.recv(1)  # auto converts to a string
+            data = s.recv(1)
 
             if not data:
                 # data is null
@@ -170,7 +185,8 @@ def handleConnection(s):
                 break
             elif data == 'N':
                 sucess = False
-                break
+                break'''
+        sucess = True
 
     printtoGUI("sent")
     # second read: get the data
@@ -178,7 +194,7 @@ def handleConnection(s):
     lastReadEquals = False
     while 1:
         # read data
-        data = s.recv(1024)
+        data = s.recv(1024).decode("utf-8")
 
         if data == lastRead:
             if lastReadEquals:
@@ -196,6 +212,10 @@ def handleConnection(s):
 
         if not data:
             # probably all null, ignore it
+            continue
+
+        if data == "":
+            # we can't do anything with an empty string, and it'll make the JSON parser angry later
             continue
 
         try:
@@ -216,7 +236,68 @@ def handleConnection(s):
                     jArray = tmp
                     jArray.append(msgJSON)
 
-        with open(GUI.filedir + "/" + match + ".json", "wb") as f:
+        with open(GUI.filedir + "/" + match + ".json", "w") as f:
             json.dump(jArray, f, indent=4)
 
         printtoGUI("Wrote data to " + match + ".json")
+
+        updateExcel(msgJSON)
+
+
+def prepExcel():
+    global wb
+    wb = excel.Workbook()
+
+    if isfile(GUI.filedir + "/output/teamsSummary.xlsx"):
+        wb = excel.load_workbook(GUI.filedir + "/output/teamsSummary.xlsx")
+    if not isdir(GUI.filedir + "/output/"):
+        makedirs(GUI.filedir + "/output/")
+
+
+def updateExcel(data, save=True):
+    # update the excel file
+    team = str(data['robot'])
+    if team in wb.sheetnames:
+        ws = wb[team]
+    else:
+        ws = wb.create_sheet(team)
+
+        # setup first row
+        i = 1
+        for key in data:
+            cell = ws.cell(row=1, column=i)
+            cell.value = key
+            i += 1
+
+    # we're gonna write to row match# + 1 because first row is labels
+    i = 1
+    for key in data:
+        cell = ws.cell(row=data['match'] + 1, column=i)
+        cell.value = data[key]
+        i += 1
+
+    if save:
+        wb.save(GUI.filedir + "/output/teamsSummary.xlsx")
+
+
+def generateExcel():
+    prepExcel()
+
+    # loop through json files and make an excel doc
+    for file in listdir(fsencode(GUI.filedir)):
+        fileName = fsdecode(file)
+
+        if fileName.lower().endswith(".json"):
+            with open(GUI.filedir + '/' + fileName) as f:
+                fileJson = json.load(f)
+
+                for i in fileJson:
+                    try:
+                        updateExcel(i, False)
+
+                    except TypeError:  # whatever we just encountered wasn't a dict, so we should ignore it
+                        continue
+                    except KeyError:  # this was a dict, but not one which contains our JSON data
+                        continue
+
+    wb.save(GUI.filedir + "/output/teamsSummary.xlsx")

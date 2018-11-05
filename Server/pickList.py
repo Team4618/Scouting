@@ -4,7 +4,7 @@ from tkinter.ttk import *
 import tba
 
 
-class pickList:
+class PickList:
     def __init__(self, parent, *args):
         self.parent = parent
         # team picking page of notebook

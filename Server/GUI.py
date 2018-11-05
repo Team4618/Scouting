@@ -18,8 +18,8 @@ class GUI:
         self.root = Notebook(parent)
         self.root.pack(expand=True, fill=BOTH)
 
-        self.scoutingPage = scouting.scoutingUI(self.root)
-        self.pickListPage = pickList.pickList(self.root)
+        self.scoutingPage = scouting.ScoutingUI(self.root)
+        self.pickListPage = pickList.PickList(self.root)
 
         self.root.select(1)  # select the pick list page
 
@@ -55,13 +55,11 @@ class GUI:
         return fileDir
 
 
-class team:
-    def __init__(self, teamNumber):
-        pass
-
-
 if __name__ == "__main__":
     root = Tk()
     root.title("Robotics")
     app = GUI(root)
     root.mainloop()
+
+    if scouting.clicked:
+        scouting.socket.close()
