@@ -7,7 +7,7 @@ Requirements to run app:
 
 Requirements to run server:
 * Python 3.5+
-  * [PyBlueZ](https://github.com/pybluez/pybluez) *may need to build from source*
+  * [PyBlueZ](https://github.com/pybluez/pybluez) *will to build from source*
   * [Requests](http://docs.python-requests.org/en/master/)
   * [openpyxl](https://openpyxl.readthedocs.io/en/stable/)
   * [PyQRCode](https://pypi.org/project/PyQRCode/)
