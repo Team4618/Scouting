@@ -16,6 +16,13 @@ class PickList:
         self.teamlistLabelFrame = LabelFrame(self.page, text="Teams")
         self.teamlistLabelFrame.pack(side=LEFT, fill=Y)
 
+        # search bar
+        self.searchText = StringVar()
+        self.searchText.set("Search")
+        self.searchText.trace('w', self.search)
+        searchBar = Entry(self.teamlistLabelFrame, textvariable=self.searchText)
+        searchBar.pack(anchor=N, fill=X)
+
         # scroll bar
         teamsScrollBar = Scrollbar(self.teamlistLabelFrame)
 
@@ -24,15 +31,10 @@ class PickList:
         self.teamsListBox.bind("<Double-Button-1>", self.selectTeamFromTeamList)
 
         # TODO: load teams from tba
-        self.teamsListBox.insert(END, "772")
-        self.teamsListBox.insert(END, "4618")
-        self.teamsListBox.insert(END, "254")
-        self.teamsListBox.insert(END, "5406")
-        self.teamsListBox.insert(END, "2056")
-        self.teamsListBox.insert(END, "4939")
-        self.teamsListBox.insert(END, "4039")
-        self.teamsListBox.insert(END, "1310")
-        self.teamsListBox.insert(END, "1360")
+        self.teams = ['772', '4618', '254', '5406', '2056', '4939', '4039', '1310', '1360']
+
+        for i in self.teams:
+            self.teamsListBox.insert(END, i)
 
         teamsScrollBar.config(command=self.teamsListBox.yview)
 
@@ -115,3 +117,9 @@ class PickList:
 
             self.pickListBox.delete(i)
             self.pickListBox.insert(i, str(i + 1) + ". " + teamNumberStr)
+
+    def search(self, *args):
+        self.teamsListBox.delete(0, END)
+        for i in self.teams:
+            if self.searchText.get() in i:
+                self.teamsListBox.insert(END, i)
