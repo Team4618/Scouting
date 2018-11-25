@@ -452,3 +452,5 @@ __pycache__/
 
 
 # End of https://www.gitignore.io/api/macos,windows,pycharm,intellij,visualstudio
+
+Server/venv/*

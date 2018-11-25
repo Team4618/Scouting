@@ -6,6 +6,7 @@ import tba
 
 class PickList:
     def __init__(self, parent, *args):
+        self.pickList = []
         self.parent = parent
         # team picking page of notebook
         self.page = Frame(parent)
@@ -17,11 +18,10 @@ class PickList:
 
         # scroll bar
         teamsScrollBar = Scrollbar(self.teamlistLabelFrame)
-        teamsScrollBar.pack(side=RIGHT, fill=Y)
 
-        self.teamsListBox = Listbox(self.teamlistLabelFrame, yscrollcommand=teamsScrollBar.set)
+        self.teamsListBox = Listbox(self.teamlistLabelFrame, yscrollcommand=teamsScrollBar.set, selectmode=SINGLE)
         self.teamsListBox.pack(side=LEFT, fill=Y)
-        self.teamsListBox.bind("<Double-Button-1>", self.selectTeamFromList)
+        self.teamsListBox.bind("<Double-Button-1>", self.selectTeamFromTeamList)
 
         # TODO: load teams from tba
         self.teamsListBox.insert(END, "772")
@@ -36,24 +36,47 @@ class PickList:
 
         teamsScrollBar.config(command=self.teamsListBox.yview)
 
-        self.rightSide = Frame(self.page)
-        self.rightSide.pack(side=LEFT, fill=BOTH)
+        # button to add team to pick list (we'll have drag and drop too)
+        Button(self.teamlistLabelFrame, text="Add", command=self.addToPickList).pack(anchor=N, side=RIGHT)
+        teamsScrollBar.pack(side=RIGHT, fill=Y)  # pack this after so its left of the button
 
-        self.rightSideHeader = StringVar()
-        rightSideStuff = Label(self.rightSide, textvariable=self.rightSideHeader)
-        rightSideStuff.grid(row=0, column=0)
+        # this should be in the middle: team info
+        self.teamInfoFrame = Frame(self.page)
+        self.teamInfoFrame.pack(side=LEFT, fill=BOTH)
+
+        self.teamInfoHeader = StringVar()
+        teamInfoHeaderLabel = Label(self.teamInfoFrame, textvariable=self.teamInfoHeader)
+        teamInfoHeaderLabel.grid(row=0, column=0)
 
         self.teamAttendedEvents = StringVar()
-        attenedEvents = Label(self.rightSide, textvariable=self.teamAttendedEvents)
+        attenedEvents = Label(self.teamInfoFrame, textvariable=self.teamAttendedEvents)
         attenedEvents.grid(row=1, column=0)
 
-        self.teamMedia = PhotoImage()
-        teamMedia = Label(self.rightSide, image=self.teamMedia)
+        # pick list, should be on the right
+        self.pickListLabelFrame = LabelFrame(self.page, text="Pick List")
+        self.pickListLabelFrame.pack(side=RIGHT, fill=Y)
 
-    def selectTeamFromList(self, *args):
+        # scroll bar
+        pickListScrollBar = Scrollbar(self.pickListLabelFrame)
+        pickListScrollBar.pack(side=RIGHT, fill=Y)
+
+        self.pickListBox = Listbox(self.pickListLabelFrame, yscrollcommand=pickListScrollBar.set, selectmode=SINGLE)
+        self.pickListBox.bind("<Double-Button-1>", self.selectTeamFromPickList)
+
+        # remove from picklist button
+        Button(self.pickListLabelFrame, text="Remove", command=self.removeFromPickList).pack(anchor=N, side=LEFT)
+        self.pickListBox.pack(side=LEFT, fill=Y)  # pack this after so button is to the left
+
+    def selectTeamFromTeamList(self, *args):
+        self.selectTeamFromList(self.teamsListBox.get(self.teamsListBox.curselection()))
+
+    def selectTeamFromPickList(self, *args):
+        self.selectTeamFromList(self.pickListBox.get(self.pickListBox.curselection()))
+
+    def selectTeamFromList(self, teamnumber):
         # from here we pull up all the data we have on that team from our sources (scouting data and tba),
         # this is a placeholder
-        teamnumber = self.teamsListBox.get(self.teamsListBox.curselection())
+        # TODO: use team module instead
         teaminfo = tba.getTeamInfo(teamnumber)
 
         teamname = teaminfo['teamName']
@@ -63,5 +86,32 @@ class PickList:
             attendedEvents += "{}:{}".format(event, record)
             attendedEvents += '\n'
 
-        self.rightSideHeader.set("Team " + teamnumber + " : " + teamname)
+        self.teamInfoHeader.set("Team " + teamnumber + " : " + teamname)
         self.teamAttendedEvents.set(attendedEvents)
+
+    def addToPickList(self):
+        # TODO: store the picklist in an array of teams instead of strings/ints
+        self.pickList.append(self.teamsListBox.get(self.teamsListBox.curselection()))
+
+        length = self.pickListBox.size()
+
+        self.pickListBox.insert(END,
+                                str(length + 1) + ". " + str(self.teamsListBox.get(self.teamsListBox.curselection())))
+        self.teamsListBox.delete(self.teamsListBox.curselection())
+
+    def removeFromPickList(self):
+        # literally the inverse of addToPickList
+        del self.pickList[self.pickListBox.curselection()[0]]
+
+        index = self.pickListBox.curselection()[0]
+
+        self.teamsListBox.insert(END, self.pickListBox.get(index)[len(str(index)) + 2:])
+        self.pickListBox.delete(index)
+        self.fixLineNumbers()
+
+    def fixLineNumbers(self):
+        for i in range(self.pickListBox.size()):
+            teamNumberStr = str(self.pickList[i])
+
+            self.pickListBox.delete(i)
+            self.pickListBox.insert(i, str(i + 1) + ". " + teamNumberStr)

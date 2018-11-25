@@ -38,7 +38,10 @@ class ScoutingUI:
 
         #####
 
-        adrr = bluetooth.read_local_bdaddr()[0]
+        try:
+            adrr = bluetooth.read_local_bdaddr()[0]
+        except OSError:
+            adrr = "No bluetooth address found. Maybe bluetooth isn't turned on?"
 
         # create qr code from address
         self.qr = createQR(adrr)
