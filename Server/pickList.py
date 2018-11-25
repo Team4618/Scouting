@@ -5,6 +5,7 @@ import tba
 
 
 class PickList:
+    # every function that takes *args does so because tkinter likes to provide variables that I don't need or care about
     def __init__(self, parent, *args):
         self.pickList = []
         self.parent = parent
@@ -29,6 +30,7 @@ class PickList:
         self.teamsListBox = Listbox(self.teamlistLabelFrame, yscrollcommand=teamsScrollBar.set, selectmode=SINGLE)
         self.teamsListBox.pack(side=LEFT, fill=Y)
         self.teamsListBox.bind("<Double-Button-1>", self.selectTeamFromTeamList)
+        self.teamsListBox.bind("<Right>", self.addToPickList)
 
         # TODO: load teams from tba
         self.teams = ['772', '4618', '254', '5406', '2056', '4939', '4039', '1310', '1360']
@@ -64,6 +66,9 @@ class PickList:
 
         self.pickListBox = Listbox(self.pickListLabelFrame, yscrollcommand=pickListScrollBar.set, selectmode=SINGLE)
         self.pickListBox.bind("<Double-Button-1>", self.selectTeamFromPickList)
+        self.pickListBox.bind("<Up>", self.rearrangeUp)
+        self.pickListBox.bind("<Down>", self.rearrangeDown)
+        self.pickListBox.bind("<Left>", self.removeFromPickList)
 
         # remove from picklist button
         Button(self.pickListLabelFrame, text="Remove", command=self.removeFromPickList).pack(anchor=N, side=LEFT)
@@ -91,9 +96,12 @@ class PickList:
         self.teamInfoHeader.set("Team " + teamnumber + " : " + teamname)
         self.teamAttendedEvents.set(attendedEvents)
 
-    def addToPickList(self):
+    def addToPickList(self, *args):
         # TODO: store the picklist in an array of teams instead of strings/ints
-        self.pickList.append(self.teamsListBox.get(self.teamsListBox.curselection()))
+        try:
+            self.pickList.append(self.teamsListBox.get(self.teamsListBox.curselection()))
+        except TclError:
+            return
 
         length = self.pickListBox.size()
 
@@ -101,9 +109,12 @@ class PickList:
                                 str(length + 1) + ". " + str(self.teamsListBox.get(self.teamsListBox.curselection())))
         self.teamsListBox.delete(self.teamsListBox.curselection())
 
-    def removeFromPickList(self):
+    def removeFromPickList(self, *args):
         # literally the inverse of addToPickList
-        del self.pickList[self.pickListBox.curselection()[0]]
+        try:
+            del self.pickList[self.pickListBox.curselection()[0]]
+        except IndexError:
+            return
 
         index = self.pickListBox.curselection()[0]
 
@@ -123,3 +134,29 @@ class PickList:
         for i in self.teams:
             if self.searchText.get() in i:
                 self.teamsListBox.insert(END, i)
+
+    def rearrangeUp(self, *args):
+        try:
+            index = self.pickListBox.curselection()[0]
+        except IndexError:
+            return
+
+        if index == 0:
+            return
+
+        self.pickList[index], self.pickList[index - 1] = self.pickList[index - 1], self.pickList[index]
+        self.fixLineNumbers()
+        self.pickListBox.selection_set(index - 1)
+
+    def rearrangeDown(self, *args):
+        try:
+            index = self.pickListBox.curselection()[0]
+        except IndexError:
+            return
+
+        if index == self.pickListBox.size() - 1:
+            return
+
+        self.pickList[index], self.pickList[index + 1] = self.pickList[index + 1], self.pickList[index]
+        self.fixLineNumbers()
+        self.pickListBox.selection_set(index + 1)
