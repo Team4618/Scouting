@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter.ttk import *
 
+import GUI
 import tba
 
 
@@ -33,10 +34,7 @@ class PickList:
         self.teamsListBox.bind("<Right>", self.addToPickList)
 
         # TODO: load teams from tba
-        self.teams = ['772', '4618', '254', '5406', '2056', '4939', '4039', '1310', '1360']
-
-        for i in self.teams:
-            self.teamsListBox.insert(END, i)
+        self.reloadTeams(GUI.event)
 
         teamsScrollBar.config(command=self.teamsListBox.yview)
 
@@ -160,3 +158,17 @@ class PickList:
         self.pickList[index], self.pickList[index + 1] = self.pickList[index + 1], self.pickList[index]
         self.fixLineNumbers()
         self.pickListBox.selection_set(index + 1)
+
+    def reloadTeams(self, eventcode):
+        print('loading')
+        try:
+            self.pickListBox.delete(0, END)
+        except AttributeError:  # we haven't created it yet
+            pass
+
+        self.teamsListBox.delete(0, END)
+
+        teams = tba.getTeams(eventcode)
+
+        for team in teams:
+            self.teamsListBox.insert(END, str(team))

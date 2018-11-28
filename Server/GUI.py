@@ -5,9 +5,13 @@ from tkinter.ttk import *
 
 import pickList
 import scouting
+from tba import getTeamEvents
 
 # static vars
 filedir = "files"
+team = 4618
+events = getTeamEvents(team)
+event = next((iter(events.values())))  # default value
 
 
 class GUI:
@@ -24,7 +28,7 @@ class GUI:
         self.root.select(1)  # select the pick list page
 
         chooseFileBtn = Button(parent, text="Choose data folder", command=self.getFileDir)
-        chooseFileBtn.pack()
+        chooseFileBtn.pack(side=LEFT)
 
         # set our working directory
         chdir(path.dirname(__file__))
@@ -39,7 +43,20 @@ class GUI:
             filedir = "..." + filedir[-17:]
 
         self.fileStrVar.set(filedir)
-        Label(parent, textvariable=self.fileStrVar).pack()
+        Label(parent, textvariable=self.fileStrVar).pack(side=LEFT)
+
+        # selector for event
+        global events
+        events = getTeamEvents(team)
+        self.eventSV = StringVar()
+        self.eventSV.set(event)
+
+        self.eventSV.trace('w', self.onEventChange)
+
+        eventChooser = OptionMenu(parent, self.eventSV, *list(events.keys()))
+        eventChooser.pack(side=RIGHT)
+
+        Label(parent, text="Event:").pack(side=RIGHT)
 
     def printToUI(self):
         # this will print to our UI in the scouting tab
@@ -53,6 +70,10 @@ class GUI:
 
         self.fileStrVar.set(fileDir)
         return fileDir
+
+    def onEventChange(self, *args2):
+        event = events[self.eventSV.get()]
+        self.pickListPage.reloadTeams(event)
 
 
 if __name__ == "__main__":

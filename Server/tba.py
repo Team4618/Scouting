@@ -5,25 +5,26 @@ import requests
 
 apiKey = "qMtpanDocP21adkOnPUrWYAsG5oUcanAuNOxIrALrrQoNddXPAQXpZQFxJQLD7Bg"
 headers = {"X-TBA-Auth-Key": apiKey}
+baseUrl = "https://www.thebluealliance.com/api/v3/"
 
 
 def getTeamInfo(teamNumber):
     # returns team name, number, record, etc
+    # this is used when giving the general summary of a team
     try:
         toReturn = {}
 
         # get team name
-        teaminfo = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc" + str(teamNumber) +
-                                           "/simple", headers=headers).text)
+        teaminfo = json.loads(requests.get(baseUrl + "team/frc" + str(teamNumber) + "/simple", headers=headers).text)
         toReturn['teamName'] = teaminfo["nickname"]
 
         year = datetime.now().year
 
         # get events team attended and their records
-        events = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc{}/events/{}/simple"
-                                         .format(teamNumber, year), headers=headers).text)
-        eventsStatues = json.loads(requests.get("https://www.thebluealliance.com/api/v3/team/frc{}/events/{}/statuses"
-                                                .format(teamNumber, year), headers=headers).text)
+        events = json.loads(requests.get(baseUrl + "team/frc{}/events/{}/simple".format(teamNumber, year),
+                                         headers=headers).text)
+        eventsStatues = json.loads(requests.get(baseUrl + "team/frc{}/events/{}/statuses".format(teamNumber, year),
+                                                headers=headers).text)
 
         attendedEvents = {}
 
@@ -57,5 +58,33 @@ def getTeamInfo(teamNumber):
         return None
 
 
+def getTeamEvents(team):
+    # request events for this year from tba
+    eventsJson = json.loads(requests.get(baseUrl + "team/frc{}/events/{}/simple".format(str(team), str(datetime.today()
+                                                                                                       .year)),
+                                         headers=headers).text)
+
+    events = {}
+
+    for event in eventsJson:
+        events[event['name']] = event['key']
+
+    return events
+
+
+def getTeams(eventKey):
+    teamsJson = json.loads(requests.get(baseUrl + "event/{}/teams/simple".format(eventKey), headers=headers).text)
+    teams = []
+    for team in teamsJson:
+        print(team)
+        teams.append(team["team_number"])
+
+    return teams
+
+
 if __name__ == "__main__":
-    getTeamInfo(4618)
+    print(getTeamInfo(4618))
+    print()
+    print(getTeamEvents(4618))
+    print()
+    print(getTeams('2018oncmp1'))
