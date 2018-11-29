@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter.filedialog import asksaveasfilename
 from tkinter.ttk import *
 
 import GUI
@@ -67,13 +68,17 @@ class PickList:
         self.pickListBox.bind("<Up>", self.rearrangeUp)
         self.pickListBox.bind("<Down>", self.rearrangeDown)
         self.pickListBox.bind("<Left>", self.removeFromPickList)
+        self.pickListBox.pack(side=RIGHT, fill=Y)
 
         # remove from picklist button
-        Button(self.pickListLabelFrame, text="Remove", command=self.removeFromPickList).pack(anchor=N, side=LEFT)
-        self.pickListBox.pack(side=LEFT, fill=Y)  # pack this after so button is to the left
+        Button(self.pickListLabelFrame, text="Remove", command=self.removeFromPickList).pack(anchor=NW)
+
+        # save picklist button
+        Button(self.pickListLabelFrame, text="Save", command=self.savePickList).pack(anchor=NW)
 
     def selectTeamFromTeamList(self, *args):
-        self.selectTeamFromList(self.teamsListBox.get(self.teamsListBox.curselection()))
+        selected = self.teamsListBox.curselection()
+        self.selectTeamFromList(self.teamsListBox.get(selected))
 
     def selectTeamFromPickList(self, *args):
         self.selectTeamFromList(self.pickListBox.get(self.pickListBox.curselection()))
@@ -160,7 +165,6 @@ class PickList:
         self.pickListBox.selection_set(index + 1)
 
     def reloadTeams(self, eventcode):
-        print('loading')
         try:
             self.pickListBox.delete(0, END)
         except AttributeError:  # we haven't created it yet
@@ -172,3 +176,17 @@ class PickList:
 
         for team in teams:
             self.teamsListBox.insert(END, str(team))
+
+    def savePickList(self):
+        file = asksaveasfilename(initialdir=GUI.filedir, title="Save Picklist", filetypes=(("Text files", "*.txt"),))
+
+        if file == "":
+            return
+
+        if not file.endswith('.txt'):
+            file += '.txt'
+
+        with open(file, 'wt') as f:
+            for i in self.pickList:
+                f.write(str(i))
+                f.write('\n')

@@ -76,7 +76,6 @@ def getTeams(eventKey):
     teamsJson = json.loads(requests.get(baseUrl + "event/{}/teams/simple".format(eventKey), headers=headers).text)
     teams = []
     for team in teamsJson:
-        print(team)
         teams.append(team["team_number"])
 
     return teams
