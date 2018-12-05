@@ -7,8 +7,25 @@ apiKey = "qMtpanDocP21adkOnPUrWYAsG5oUcanAuNOxIrALrrQoNddXPAQXpZQFxJQLD7Bg"
 headers = {"X-TBA-Auth-Key": apiKey}
 baseUrl = "https://www.thebluealliance.com/api/v3/"
 
+# get api status
+online = False
+try:
+    status = json.loads(requests.get(baseUrl + "status", headers=headers).text)
+    online = True
+except requests.exceptions.ConnectionError:
+    # no connection to tba (no internet or tba is down)
+    status = "No internet connection"
+    online = False
+
+
+def isOnline():
+    return online
+
 
 def getTeamInfo(teamNumber):
+    if not online:
+        return
+
     # returns team name, number, record, etc
     # this is used when giving the general summary of a team
     try:
@@ -59,6 +76,9 @@ def getTeamInfo(teamNumber):
 
 
 def getTeamEvents(team):
+    if not online:
+        return
+
     # request events for this year from tba
     eventsJson = json.loads(requests.get(baseUrl + "team/frc{}/events/{}/simple".format(str(team), str(datetime.today()
                                                                                                        .year)),
@@ -73,6 +93,9 @@ def getTeamEvents(team):
 
 
 def getTeams(eventKey):
+    if not online:
+        return
+
     teamsJson = json.loads(requests.get(baseUrl + "event/{}/teams/simple".format(eventKey), headers=headers).text)
     teams = []
     for team in teamsJson:

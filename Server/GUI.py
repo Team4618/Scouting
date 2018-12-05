@@ -5,13 +5,17 @@ from tkinter.ttk import *
 
 import pickList
 import scouting
-from tba import getTeamEvents
+from tba import getTeamEvents, isOnline
 
 # static vars
 filedir = "files"
 team = 4618
 events = getTeamEvents(team)
-event = next((iter(events.values())))  # default value
+
+if not isOnline():
+    event = "No internet connection"
+else:
+    event = next((iter(events.values())))  # default value
 
 
 class GUI:
@@ -53,7 +57,12 @@ class GUI:
 
         self.eventSV.trace('w', self.onEventChange)
 
-        eventChooser = OptionMenu(parent, self.eventSV, *list(events.keys()))
+        eventList = ["No internet connection"]
+
+        if isOnline():
+            eventList = list(events.keys())
+
+        eventChooser = OptionMenu(parent, self.eventSV, *eventList)
         eventChooser.pack(side=RIGHT)
 
         Label(parent, text="Event:").pack(side=RIGHT)
@@ -72,6 +81,9 @@ class GUI:
         return fileDir
 
     def onEventChange(self, *args2):
+        if not isOnline():
+            return
+
         event = events[self.eventSV.get()]
         self.pickListPage.reloadTeams(event)
 

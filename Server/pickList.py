@@ -77,6 +77,9 @@ class PickList:
         Button(self.pickListLabelFrame, text="Save", command=self.savePickList).pack(anchor=NW)
 
     def selectTeamFromTeamList(self, *args):
+        if not tba.isOnline():
+            return
+
         selected = self.teamsListBox.curselection()
         self.selectTeamFromList(self.teamsListBox.get(selected))
 
@@ -84,6 +87,9 @@ class PickList:
         self.selectTeamFromList(self.pickListBox.get(self.pickListBox.curselection()))
 
     def selectTeamFromList(self, teamnumber):
+        if not tba.isOnline():
+            return
+
         # from here we pull up all the data we have on that team from our sources (scouting data and tba),
         # this is a placeholder
         # TODO: use team module instead
@@ -100,6 +106,9 @@ class PickList:
         self.teamAttendedEvents.set(attendedEvents)
 
     def addToPickList(self, *args):
+        if not tba.isOnline():
+            return
+
         # TODO: store the picklist in an array of teams instead of strings/ints
         try:
             self.pickList.append(self.teamsListBox.get(self.teamsListBox.curselection()))
@@ -172,7 +181,10 @@ class PickList:
 
         self.teamsListBox.delete(0, END)
 
-        teams = tba.getTeams(eventcode)
+        if tba.isOnline():
+            teams = tba.getTeams(eventcode)
+        else:
+            teams = ["No internet connection"]
 
         for team in teams:
             self.teamsListBox.insert(END, str(team))
