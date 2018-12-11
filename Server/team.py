@@ -15,11 +15,14 @@ class Team:
         self.name = None
         self.attendedEvents = None
 
-        if tbaInfo is not None:  # will be false if no internet or can't connect to tba
-            self.name = tbaInfo['name']
+        if tba.isOnline():  # will be false if no internet or can't connect to tba
+            self.name = tbaInfo['teamName']
             self.attendedEvents = tbaInfo['attendedEvents']
 
         self.getTeamInfoFromJSON()
+
+        if not inList(self, teams):
+            teams.append(self)
 
     def getTeamInfoFromJSON(self):
         # loop through each JSON file and find our team data
@@ -29,18 +32,21 @@ class Team:
             fileName = fsdecode(file)
 
             if fileName.lower().endswith(".json"):
-                with open(file) as f:
-                    fileJson = json.load(f)
+                try:
+                    with open(file) as f:
+                        fileJson = json.load(f)
 
-                    for i in fileJson:
-                        try:
-                            if i['robot'] == str(self.number):
-                                rawJSON.append(i)
+                        for i in fileJson:
+                            try:
+                                if i['robot'] == str(self.number):
+                                    rawJSON.append(i)
 
-                        except TypeError:  # whatever we just encountered wasn't a dict, so we should ignore it
-                            continue
-                        except KeyError:  # this was a dict, but not one which contains our JSON data
-                            continue
+                            except TypeError:  # whatever we just encountered wasn't a dict, so we should ignore it
+                                continue
+                            except KeyError:  # this was a dict, but not one which contains our JSON data
+                                continue
+                except FileNotFoundError:
+                    self.JSONdata = []
 
         # sort into a dict keyed by match number
         self.JSONdata = {}
@@ -53,3 +59,24 @@ class Team:
                 else:
                     self.JSONdata[match] = i
                     break
+
+
+def inList(team, l):
+    if type(l) is not list or type(team) is not Team:
+        return False
+
+    for i in l:
+        if type(i) is Team:
+            print(i.number)
+            print(team.number)
+            print(i.number == team.number)
+            print()
+            if i.number == team.number:
+                return True
+
+    return False
+
+
+def loadAllTeamsData(teams):
+    for team in teams:
+        Team(team)

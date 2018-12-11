@@ -4,12 +4,15 @@ from tkinter.ttk import *
 
 import GUI
 import tba
+from team import Team
 
 
+# TODO: DO SOMETHING WITH SCOUTING DATA
 class PickList:
     # every function that takes *args does so because tkinter likes to provide variables that I don't need or care about
     def __init__(self, parent, *args):
         self.pickList = []
+        self.teams = []
         self.parent = parent
         # team picking page of notebook
         self.page = Frame(parent)
@@ -34,7 +37,6 @@ class PickList:
         self.teamsListBox.bind("<Double-Button-1>", self.selectTeamFromTeamList)
         self.teamsListBox.bind("<Right>", self.addToPickList)
 
-        # TODO: load teams from tba
         self.reloadTeams(GUI.event)
 
         teamsScrollBar.config(command=self.teamsListBox.yview)
@@ -86,23 +88,24 @@ class PickList:
     def selectTeamFromPickList(self, *args):
         self.selectTeamFromList(self.pickListBox.get(self.pickListBox.curselection()))
 
-    def selectTeamFromList(self, teamnumber):
+    def selectTeamFromList(self, teamNumber):
         if not tba.isOnline():
             return
 
         # from here we pull up all the data we have on that team from our sources (scouting data and tba),
         # this is a placeholder
         # TODO: use team module instead
-        teaminfo = tba.getTeamInfo(teamnumber)
 
-        teamname = teaminfo['teamName']
+        team = Team(teamNumber)
+
+        teamname = team.name
 
         attendedEvents = "Attended events:\n"
-        for event, record in teaminfo['attendedEvents'].items():
+        for event, record in team.attendedEvents.items():
             attendedEvents += "{}:{}".format(event, record)
             attendedEvents += '\n'
 
-        self.teamInfoHeader.set("Team " + teamnumber + " : " + teamname)
+        self.teamInfoHeader.set("Team " + teamNumber + " : " + teamname)
         self.teamAttendedEvents.set(attendedEvents)
 
     def addToPickList(self, *args):
@@ -144,7 +147,7 @@ class PickList:
     def search(self, *args):
         self.teamsListBox.delete(0, END)
         for i in self.teams:
-            if self.searchText.get() in i:
+            if self.searchText.get() in str(i):
                 self.teamsListBox.insert(END, i)
 
     def rearrangeUp(self, *args):
@@ -186,8 +189,10 @@ class PickList:
         else:
             teams = ["No internet connection"]
 
+        self.teams = []
         for team in teams:
             self.teamsListBox.insert(END, str(team))
+            self.teams.append(team)
 
     def savePickList(self):
         file = asksaveasfilename(initialdir=GUI.filedir, title="Save Picklist", filetypes=(("Text files", "*.txt"),))
