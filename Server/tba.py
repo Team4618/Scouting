@@ -6,6 +6,7 @@ import requests
 apiKey = "qMtpanDocP21adkOnPUrWYAsG5oUcanAuNOxIrALrrQoNddXPAQXpZQFxJQLD7Bg"
 headers = {"X-TBA-Auth-Key": apiKey}
 baseUrl = "https://www.thebluealliance.com/api/v3/"
+year = str(datetime.today().year)
 
 # get api status
 online = False
@@ -32,10 +33,8 @@ def getTeamInfo(teamNumber):
         toReturn = {}
 
         # get team name
-        teaminfo = json.loads(requests.get(baseUrl + "team/frc" + str(teamNumber) + "/simple", headers=headers).text)
+        teaminfo = json.loads(requests.get(baseUrl + "team/frc{}/simple".format(str(teamNumber)), headers=headers).text)
         toReturn['teamName'] = teaminfo["nickname"]
-
-        year = datetime.now().year
 
         # get events team attended and their records
         events = json.loads(requests.get(baseUrl + "team/frc{}/events/{}/simple".format(teamNumber, year),
@@ -66,9 +65,22 @@ def getTeamInfo(teamNumber):
         toReturn['attendedEvents'] = attendedEvents
 
         # get teams media
-        defualtPicture = "files/images/default.jpg"
+        picture = "files/images/default.jpg"  # default image
 
-        toReturn['media'] = defualtPicture
+        # requests all the images that you would usually see on the tba website
+        teamMedia = requests.get(baseUrl + "team/frc{}/media/{}".format(teamNumber, year), headers=headers).json()
+
+        # look through everything, take images that are hosted on either Imgur or Instagram, and download the first one
+        for i in teamMedia:
+            if i["type"] == "imgur" or i["type"] == "instagram-image":
+                image = requests.get(i['direct_url'], allow_redirects=True)
+
+                with open("files/images/{}.jpg".format(teamNumber), 'wb') as img:
+                    img.write(image.content)
+
+                picture = "files/images/{}.jpg".format(teamNumber)
+
+        toReturn['media'] = picture
         return toReturn
 
     except requests.exceptions.ConnectionError:  # no internet access, or tba is down
@@ -80,9 +92,9 @@ def getTeamEvents(team):
         return
 
     # request events for this year from tba
-    eventsJson = json.loads(requests.get(baseUrl + "team/frc{}/events/{}/simple".format(str(team), str(datetime.today()
-                                                                                                       .year)),
+    eventsJson = json.loads(requests.get(baseUrl + "team/frc{}/events/{}/simple".format(team, year),
                                          headers=headers).text)
+    #eventsJson = json.loads(requests.get(baseUrl + "team/frc{}/events/simple".format(str(team)), headers=headers).text)
 
     events = {}
 
@@ -105,8 +117,8 @@ def getTeams(eventKey):
 
 
 if __name__ == "__main__":
-    print(getTeamInfo(4618))
+    print(getTeamInfo(254))
     print()
-    print(getTeamEvents(4618))
+    print(getTeamEvents(254))
     print()
     print(getTeams('2018oncmp1'))

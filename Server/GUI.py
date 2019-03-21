@@ -24,6 +24,7 @@ class GUI:
 
         # main notebook
         self.root = Notebook(parent)
+        self.root = Notebook(parent)
         self.root.pack(expand=True, fill=BOTH)
 
         self.scoutingPage = scouting.ScoutingUI(self.root)
@@ -50,8 +51,6 @@ class GUI:
         Label(parent, textvariable=self.fileStrVar).pack(side=LEFT)
 
         # selector for event
-        global events
-        events = getTeamEvents(team)
         self.eventSV = StringVar()
         self.eventSV.set(event)
 
@@ -91,6 +90,7 @@ class GUI:
 if __name__ == "__main__":
     root = Tk()
     root.title("Robotics")
+    root.iconbitmap('icon.ico')
     app = GUI(root)
     root.mainloop()
 

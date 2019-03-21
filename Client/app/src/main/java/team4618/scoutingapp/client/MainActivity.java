@@ -493,9 +493,11 @@ public class MainActivity extends AppCompatActivity {
                 boolean recived = false;
                 String template = "";
                 while (!recived) {
+                    Log.d(tag, "Trying to recive template length");
 
                     int len;
                     while (true) {
+                        Log.d(tag, "Reciving...");
                         byte[] buffer = new byte[4];
                         int read = in.read(buffer);
 
@@ -508,6 +510,8 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         }
                     }
+
+                    Log.d(tag, "Sucessfully got template length");
 
 
                     while (template.length() < len) {

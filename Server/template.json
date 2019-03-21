@@ -22,12 +22,32 @@
   {
     "type": "rdoBtn",
     "jsonLabel": "startingSide",
-    "question": "What side did the robot start on?",
+    "question": "What platform did the robot start on?",
     "options": [
-      "Left",
-      "Center",
-      "Right"
+      "3",
+      "2",
+      "1"
     ]
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "autoPanels",
+    "question": "How many hatch panels did the robot place?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "autoCargo",
+    "question": "How much cargo did the robot place?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "autoRocketPanels",
+    "question": "How many panels did the robot put in the rocket?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "autoRocketCargo",
+    "question": "How much cargo did the robot put in the rocket?"
   },
   {
     "type": "space",
@@ -39,28 +59,38 @@
   },
   {
     "type": "tallyInt",
-    "jsonLabel": "teleopCubesScale",
-    "question": "How many cubes did the robot put in the scale?"
+    "jsonLabel": "teleopPanels",
+    "question": "How many hatch panels did the robot place?"
   },
   {
     "type": "tallyInt",
-    "jsonLabel": "teleopCubesSwitch",
-    "question": "How many cubes did the robot put in the switch?"
+    "jsonLabel": "teleopCargo",
+    "question": "How much cargo did the robot place?"
   },
   {
     "type": "tallyInt",
-    "jsonLabel": "teleopCubesVault",
-    "question": "How many cubes did the robot put in the vault?"
+    "jsonLabel": "teleopRocketPanels",
+    "question": "How many panels did the robot put in the rocket?"
   },
   {
     "type": "tallyInt",
-    "jsonLabel": "droppedCubes",
-    "question": "How many cubes did the robot drop?"
+    "jsonLabel": "teleopRocketCargo",
+    "question": "How much cargo did the robot put in the rocket?"
   },
   {
     "type": "tallyInt",
-    "jsonLabel": "defenseCubes",
-    "question": "How many cubes did the robot score playing defense?"
+    "jsonLabel": "droppedPanels",
+    "question": "How many panels did the robot drop?"
+  },
+  {
+    "type": "tallyInt",
+    "jsonLabel": "droppedCargo",
+    "question": "How much cargo did the robot drop?"
+  },
+  {
+	"type": "chck",
+	"jsonLabel":"playedDefense",
+	"question":"Robot played defense"
   },
   {
     "type": "chck",
@@ -84,20 +114,20 @@
   },
   {
     "type": "int",
-    "jsonLabel": "rateScale",
-    "question": "What would you rate the robot's ability to score using the scale?(/10)",
+    "jsonLabel": "ratePannels",
+    "question": "What would you rate the robot's ability to score hatch pannels?(/10)",
     "maxChars": 2
   },
   {
     "type": "int",
-    "jsonLabel": "rateSwitch",
-    "question": "What would you rate the robot's ability to score using the switch?(/10)",
+    "jsonLabel": "rateCargo",
+    "question": "What would you rate the robot's ability to score cargo?(/10)",
     "maxChars": 2
   },
   {
     "type": "int",
-    "jsonLabel": "rateVault",
-    "question": "What would you rate the robot's ability to score using the vault?(/10)",
+    "jsonLabel": "rateRocket",
+    "question": "What would you rate the robot's ability to score on rockets?(/10)",
     "maxChars": 2
   },
   {

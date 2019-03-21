@@ -17,7 +17,7 @@
             android:onClick="selectModeBT"
             app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
             app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
-            app:layout_constraintHorizontal_bias="0.2"/>
+    />
     <Button
             android:text="None"
             android:layout_width="wrap_content"
@@ -28,7 +28,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintVertical_bias="0.3" android:layout_marginStart="8dp"
             app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
-            app:layout_constraintHorizontal_bias="0.8"/>
+            app:layout_constraintHorizontal_bias="0.8" android:visibility="gone"/>
     <Button
             android:text="Adress List"
             android:layout_width="wrap_content"
@@ -36,16 +36,17 @@
             android:onClick="btnOptions"
             app:layout_constraintTop_toTopOf="parent" android:layout_marginTop="8dp"
             app:layout_constraintBottom_toBottomOf="parent" android:layout_marginBottom="8dp"
-            app:layout_constraintStart_toStartOf="@+id/btnSelectNone" android:layout_marginStart="8dp"
-            app:layout_constraintEnd_toEndOf="@+id/btnSelectNone"/>
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            app:layout_constraintHorizontal_bias="0.9"/>
     <Button
             android:text="Pit Scouting"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:id="@+id/btnPitScouting"
-            app:layout_constraintStart_toStartOf="@+id/btnSelectBT"
             app:layout_constraintBaseline_toBaselineOf="@+id/btnOptions"
-            app:layout_constraintEnd_toEndOf="@+id/btnSelectBT" android:layout_marginEnd="8dp"
-            android:onClick="selctModePit"/>
+            android:onClick="selctModePit" app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="8dp" app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            app:layout_constraintHorizontal_bias="0.1"/>
     <EditText
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

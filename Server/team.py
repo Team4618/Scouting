@@ -1,10 +1,13 @@
 import json
-from os import fsencode, fsdecode, listdir
+from os import fsencode, fsdecode, listdir, path, getcwd
 
 import GUI
 import tba
 
 teams = []
+
+imagetypes = [".jpg", ".jpeg", ".jpe", ".jfif", ".jif"]  # jpgs
+imagetypes += [".png"]  # pngs
 
 
 class Team:
@@ -21,6 +24,18 @@ class Team:
 
         self.getTeamInfoFromJSON()
 
+        self.image = GUI.filedir + "\\images\\default.jpg"
+        for extension in imagetypes:
+            imgpath = GUI.filedir + "\\images\\" + str(teamNumber) + extension
+            if path.isfile(imgpath):
+                self.image = imgpath
+                break
+
+            imgpath = GUI.filedir + "\\images\\" + str(teamNumber) + extension.upper()
+            if path.isfile(imgpath):
+                self.image = imgpath
+                break
+
         if not inList(self, teams):
             teams.append(self)
 
@@ -28,17 +43,15 @@ class Team:
         # loop through each JSON file and find our team data
 
         rawJSON = []
-        for file in listdir(fsencode(GUI.filedir)):
-            fileName = fsdecode(file)
-
-            if fileName.lower().endswith(".json"):
+        for file in listdir(GUI.filedir):
+            if file.lower().endswith(".json"):
                 try:
-                    with open(file) as f:
+                    with open(GUI.filedir + '\\' + file) as f:
                         fileJson = json.load(f)
 
                         for i in fileJson:
                             try:
-                                if i['robot'] == str(self.number):
+                                if i['robot'] == int(self.number):
                                     rawJSON.append(i)
 
                             except TypeError:  # whatever we just encountered wasn't a dict, so we should ignore it
@@ -67,10 +80,6 @@ def inList(team, l):
 
     for i in l:
         if type(i) is Team:
-            print(i.number)
-            print(team.number)
-            print(i.number == team.number)
-            print()
             if i.number == team.number:
                 return True
 
@@ -80,3 +89,11 @@ def inList(team, l):
 def loadAllTeamsData(teams):
     for team in teams:
         Team(team)
+
+
+def getTeamFromArray(number):
+    for team in teams:
+        if team.number == number:
+            return team
+
+    return None
