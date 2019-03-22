@@ -11,6 +11,7 @@ Requirements to run server:
   * [Requests](http://docs.python-requests.org/en/master/)
   * [openpyxl](https://openpyxl.readthedocs.io/en/stable/)
   * [PyQRCode](https://pypi.org/project/PyQRCode/)
+  * [Pillow](https://python-pillow.org/)
 * Bluetooth 4.0+
 
 To use everything together:
