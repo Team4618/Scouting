@@ -5,6 +5,7 @@ from tkinter.ttk import *
 
 import pickList
 import scouting
+import sort
 from tba import getTeamEvents, isOnline
 
 # static vars
@@ -24,13 +25,13 @@ class GUI:
 
         # main notebook
         self.root = Notebook(parent)
-        self.root = Notebook(parent)
         self.root.pack(expand=True, fill=BOTH)
 
         self.scoutingPage = scouting.ScoutingUI(self.root)
         self.pickListPage = pickList.PickList(self.root)
+        self.sortPage = sort.Sort(self.root)
 
-        self.root.select(1)  # select the pick list page
+        self.root.select(0)  # select the scouting page
 
         chooseFileBtn = Button(parent, text="Choose data folder", command=self.getFileDir)
         chooseFileBtn.pack(side=LEFT)

@@ -17,7 +17,7 @@
   },
   {
     "type": "header",
-    "label": "Auto"
+    "label": "Sandstorm"
   },
   {
     "type": "rdoBtn",
@@ -32,22 +32,22 @@
   {
     "type": "tallyInt",
     "jsonLabel": "autoPanels",
-    "question": "How many hatch panels did the robot place?"
+    "question": "How many hatch panels did the robot place? (Auto)"
   },
   {
     "type": "tallyInt",
     "jsonLabel": "autoCargo",
-    "question": "How much cargo did the robot place?"
+    "question": "How much cargo did the robot place? (Auto)"
   },
   {
     "type": "tallyInt",
     "jsonLabel": "autoRocketPanels",
-    "question": "How many panels did the robot put in the rocket?"
+    "question": "How many panels did the robot put in the rocket? (Auto)"
   },
   {
     "type": "tallyInt",
     "jsonLabel": "autoRocketCargo",
-    "question": "How much cargo did the robot put in the rocket?"
+    "question": "How much cargo did the robot put in the rocket? (Auto)"
   },
   {
     "type": "space",
@@ -105,7 +105,18 @@
   {
     "type": "chck",
     "jsonLabel": "climbed",
-    "question": "Robot successfully climbed"
+    "question": "Robot successfully climbed (Second or third level)"
+  },
+  {
+    "type": "rdoBtn",
+    "jsonLabel": "climbLevel",
+    "question": "What platform did the robot climb to?",
+    "options": [
+      "0",
+      "1",
+      "2",
+      "3"
+    ]
   },
   {
     "type": "chck",
@@ -115,7 +126,7 @@
   {
     "type": "int",
     "jsonLabel": "ratePannels",
-    "question": "What would you rate the robot's ability to score hatch pannels?(/10)",
+    "question": "What would you rate the robot's ability to score hatch panels?(/10)",
     "maxChars": 2
   },
   {
@@ -126,14 +137,26 @@
   },
   {
     "type": "int",
-    "jsonLabel": "rateRocket",
-    "question": "What would you rate the robot's ability to score on rockets?(/10)",
+    "jsonLabel": "rateRocketPanels",
+    "question": "What would you rate the robot's ability to score panels on rockets?(/10)",
+    "maxChars": 2
+  },
+  {
+    "type": "int",
+    "jsonLabel": "rateRocketCargo",
+    "question": "What would you rate the robot's ability to score cargo on rockets?(/10)",
     "maxChars": 2
   },
   {
     "type": "int",
     "jsonLabel": "rateBot",
     "question": "What would you rate the robot overall?(/10)",
+    "maxChars": 2
+  },
+  {
+    "type": "int",
+    "jsonLabel": "rateDriver",
+    "question": "What would you rate the driver?(/10)",
     "maxChars": 2
   },
   {
