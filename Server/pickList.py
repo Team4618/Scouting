@@ -1,11 +1,12 @@
-from subprocess import call as subCall
-from platform import system
+from json import load as loadJSON
 from os import startfile
+from platform import system
+from subprocess import call as subCall
 from tkinter import *
 from tkinter.filedialog import asksaveasfilename
 from tkinter.ttk import *
+
 from PIL import Image, ImageTk
-from json import load as loadJSON
 
 import GUI
 import tba
@@ -17,7 +18,9 @@ class PickList:
 
     def __init__(self, parent, *args):
         self.pickList = []
+        self.tags = []
         self.teams = []
+        self.remainingTeams = []
         self.parent = parent
         # team picking page of notebook
         self.page = Frame(parent)
@@ -86,6 +89,9 @@ class PickList:
         # save picklist button
         Button(self.pickListLabelFrame, text="Save", command=self.savePickList).pack(anchor=NW)
 
+        # add tag button
+        Button(self.pickListLabelFrame, text="Add tag", command=self.addTag).pack(anchor=NW)
+
     ###############
     # UI FUNCTIONS
     ###############
@@ -96,10 +102,11 @@ class PickList:
 
             self.pickListBox.delete(i)
             self.pickListBox.insert(i, str(i + 1) + ". " + teamNumberStr)
+            self.pickListBox.insert(i, str(i + 1) + ". " + teamNumberStr)
 
     def search(self, *args):
         self.teamsListBox.delete(0, END)
-        for i in self.teams:
+        for i in self.remainingTeams:
             if self.searchText.get() in str(i):
                 self.teamsListBox.insert(END, i)
 
@@ -113,6 +120,7 @@ class PickList:
             return
 
         self.pickList[index], self.pickList[index - 1] = self.pickList[index - 1], self.pickList[index]
+        self.tags[index], self.tags[index - 1] = self.tags[index - 1], self.tags[index]
         self.fixLineNumbers()
         self.pickListBox.selection_set(index - 1)
 
@@ -126,6 +134,7 @@ class PickList:
             return
 
         self.pickList[index], self.pickList[index + 1] = self.pickList[index + 1], self.pickList[index]
+        self.tags[index], self.tags[index + 1] = self.tags[index + 1], self.tags[index]
         self.fixLineNumbers()
         self.pickListBox.selection_set(index + 1)
 
@@ -145,10 +154,8 @@ class PickList:
     def selectTeamFromList(self, teamNumber):
         if not tba.isOnline():
             return
-
-        # from here we pull up all the data we have on that team from our sources (scouting data and tba),
-        # this is a placeholder
         # TODO: use team module instead
+        # do we? idk? this whole thing has gone to crap and i cant wait to nuke it
 
         team = Team(teamNumber)
 
@@ -162,7 +169,8 @@ class PickList:
         for child in self.teamInfoFrame.winfo_children():
             child.destroy()
 
-        header = Label(self.teamInfoFrame, text="Team " + str(teamNumber) + " : " + teamname, font=("Helvetica", 20, "bold"))
+        header = Label(self.teamInfoFrame, text="Team " + str(teamNumber) + " : " + teamname,
+                       font=("Helvetica", 20, "bold"))
         header.grid(row=0, column=0, columnspan=9999)
 
         attendedEvents = Label(self.teamInfoFrame, text=attendedEvents)
@@ -250,7 +258,7 @@ class PickList:
                     pass
 
             # add this question to our data output
-            scoutingDataLB.insert(END, question + " : " + str(float(value) / increments[key]))
+            scoutingDataLB.insert(END, question + " : " + str(round((float(value) / increments[key]), 2)))
 
         for key, value in nonInts.items():
             # find the question
@@ -267,7 +275,8 @@ class PickList:
             scoutingDataLB.insert(END, question + ":")
 
             for i in value:
-                scoutingDataLB.insert(END, "    " + i)
+                if i.strip() != '':
+                    scoutingDataLB.insert(END, "    " + i)
 
     def savePickList(self):
         file = asksaveasfilename(initialdir=GUI.filedir, title="Save Picklist", filetypes=(("Text files", "*.txt"),))
@@ -279,9 +288,24 @@ class PickList:
             file += '.txt'
 
         with open(file, 'wt') as f:
-            for i in self.pickList:
-                f.write(str(i))
+            for i in range(len(self.pickList)):
+                f.write(str(self.pickList[i]))
+                f.write(": " + self.tags[i])
                 f.write('\n')
+
+    def addTag(self):
+        self.tagIndex = self.pickListBox.curselection()[0]
+
+        self.tagSv = StringVar()
+        self.tagSv.set(self.tags[self.tagIndex])
+        self.tagSv.trace('w', self.changeTag)
+
+        popUp = Toplevel()
+        Entry(popUp, textvariable=self.tagSv).pack()
+
+    def changeTag(self, *args):
+        # worker function for addTag()
+        self.tags[self.tagIndex] = self.tagSv.get()
 
     # list manipulation
 
@@ -299,6 +323,8 @@ class PickList:
 
         self.pickListBox.insert(END,
                                 str(length + 1) + ". " + str(self.teamsListBox.get(self.teamsListBox.curselection())))
+        self.tags.append("")
+        del (self.remainingTeams[self.remainingTeams.index(self.teamsListBox.get(self.teamsListBox.curselection()))])
         self.teamsListBox.delete(self.teamsListBox.curselection())
 
     def removeFromPickList(self, *args):
@@ -311,7 +337,9 @@ class PickList:
         index = self.pickListBox.curselection()[0]
 
         self.teamsListBox.insert(END, self.pickListBox.get(index)[len(str(index)) + 2:])
+        self.remainingTeams.append(self.pickListBox.get(index)[len(str(index)) + 2:])
         self.pickListBox.delete(index)
+        del (self.tags[index])
         self.fixLineNumbers()
 
     def blackList(self, *args):
@@ -321,6 +349,7 @@ class PickList:
         except TclError:
             return
 
+        del (self.remainingTeams[self.remainingTeams.index(self.teamsListBox.get(self.teamsListBox.curselection()))])
         self.teamsListBox.delete(self.teamsListBox.curselection())
 
     def unBlackList(self, *args):
@@ -330,6 +359,7 @@ class PickList:
         except TclError:
             return
 
+        self.remainingTeams.append(self.blackListBox.get(self.blackListBox.curselection()))
         self.blackListBox.delete(self.blackListBox.curselection())
 
     def reloadTeams(self, eventcode):
@@ -349,3 +379,5 @@ class PickList:
         for team in teams:
             self.teamsListBox.insert(END, str(team))
             self.teams.append(team)
+
+        self.remainingTeams = self.teams

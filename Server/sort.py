@@ -69,6 +69,7 @@ class Sort:
             if file.lower().endswith(".json"):
                 with open(GUI.filedir + '\\' + file) as f:
                     fileJson = loadJSON(f)
+                    print(file)
 
                 for i in fileJson:
                     try:
