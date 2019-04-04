@@ -211,6 +211,18 @@ class PickList:
         scoutingDataLB.grid(row=0, column=0, sticky=NSEW)
         scoutingDataFrame.columnconfigure(0, weight=1)
 
+        # setup seperate box for comments because massimo wants it
+        commentsScrollx = Scrollbar(scoutingDataFrame, orient=HORIZONTAL)
+        commentsScrolly = Scrollbar(scoutingDataFrame)
+        commentsLB = Listbox(scoutingDataFrame, xscrollcommand=commentsScrollx.set, yscrollcommand=commentsScrolly.set)
+        commentsScrollx.config(command=commentsLB.xview)
+        commentsScrolly.config(command=commentsLB.yview)
+
+        commentsScrollx.grid(row=3, column=0)
+        commentsScrolly.grid(row=2, column=1)
+        commentsLB.grid(row=2, column=0, sticky=NSEW)
+        commentsLB.insert(END, "Comments:")
+
         # load template
         with open("template.json", "r") as f:
             template = loadJSON(f)
@@ -263,20 +275,24 @@ class PickList:
         for key, value in nonInts.items():
             # find the question
             # this is pretty similar to the previous loop and could probably be combined but at this point idk
-            question = ""
-            for i in template:
-                try:
-                    if i['jsonLabel'] == key:
-                        question = i['question']
-                except KeyError:
-                    pass
+            if key != "comments":
+                question = ""
+                for i in template:
+                    try:
+                        if i['jsonLabel'] == key:
+                            question = i['question']
+                    except KeyError:
+                        pass
 
-            # add it to our box/output
-            scoutingDataLB.insert(END, question + ":")
+                # add it to our box/output
+                scoutingDataLB.insert(END, question + ":")
 
             for i in value:
                 if i.strip() != '':
-                    scoutingDataLB.insert(END, "    " + i)
+                    if key == "comments":
+                        commentsLB.insert(END, "    " + i)
+                    else:
+                        scoutingDataLB.insert(END, "    " + i)
 
     def savePickList(self):
         file = asksaveasfilename(initialdir=GUI.filedir, title="Save Picklist", filetypes=(("Text files", "*.txt"),))
@@ -381,3 +397,20 @@ class PickList:
             self.teams.append(team)
 
         self.remainingTeams = self.teams
+
+    '''def graph(self, data):
+        # data should be an array of bools or ints
+        dataType = type(data[0])
+
+        if dataType == bool:
+            labels = ['YES', 'NO']
+        elif dataType == int:
+            labels = []
+            for i in data:
+                toAdd = str(i)
+                if toAdd not in labels:
+                    labels.append(toAdd)
+        else:
+            return
+        # TODO: add the data into an array and display the chart
+        # https://matplotlib.org/gallery/pie_and_polar_charts/pie_features.html'''

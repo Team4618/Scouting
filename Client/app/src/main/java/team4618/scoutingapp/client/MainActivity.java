@@ -15,6 +15,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
@@ -36,6 +37,7 @@ import team4618.scoutingapp.client.Views.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static android.view.View.TEXT_ALIGNMENT_CENTER;
@@ -58,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     static int imageCaptureRequest = 1;
     BluetoothDevice server = null;
     BluetoothAdapter btAdapter = null;
+
+    String[] teams;
 
 
     @Override
@@ -103,6 +107,8 @@ public class MainActivity extends AppCompatActivity {
             //selects yes or no
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.
                     WRITE_EXTERNAL_STORAGE}, requestPermsCode);
+
+        teams = new String[] {"0"};
     }
 
     public JSONArray readJson() {
@@ -233,6 +239,17 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     for (int i = 0; i < template.length(); i++) {
                         JSONObject obj = template.getJSONObject(i);
+
+                        try {
+                            if (obj.getString("jsonLabel").equals( "robot")) {
+                                teamNumberInput tni = new teamNumberInput(context, "Robot #",
+                                        obj.getInt("maxChars"), obj.getString("jsonLabel"), teams);
+
+                                ll.addView(tni);
+                                questions.add(tni);
+                                continue;
+                            }
+                        } catch (org.json.JSONException ex) {} //probably like a space or something
 
                         switch (obj.getString("type")) {
                             default:
@@ -492,11 +509,11 @@ public class MainActivity extends AppCompatActivity {
                 boolean recived = false;
                 String template = "";
                 while (!recived) {
-                    Log.d(tag, "Trying to recive template length");
+                    Log.d(tag, "Trying to receive template length");
 
                     int len;
                     while (true) {
-                        Log.d(tag, "Reciving...");
+                        Log.d(tag, "Receiving...");
                         byte[] buffer = new byte[4];
                         int read = in.read(buffer);
 
@@ -510,10 +527,10 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
 
-                    Log.d(tag, "Sucessfully got template length");
-
+                    Log.d(tag, "Successfully got template length");
 
                     while (template.length() < len) {
+                        Log.d(tag, "Receiving template...");
                         byte[] buffer = new byte[1024];
                         int read = in.read(buffer);
 
@@ -527,22 +544,67 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     recived = true;
-                    /*//make sure there's no corruption, check end and beginning
-                    System.out.println(template);
-                    if (template.startsWith("[{") && template.endsWith("}]")) {
-                        recived = true;
-                    }
-
-                    //send if everything was recived properly
-                    out.write((byte) (recived ? 'Y' : 'N'));
-                    out.flush();*/
                 }
 
+                //now we try to recive the teams list
+                //most of this code is copy/paste and bad lol
+                recived = false;
+                String teamsFile = "";
+
+                while (!recived) {
+                    Log.d(tag, "Trying to receive teams list length");
+
+                    int len;
+                    while (true) {
+                        Log.d(tag, "Receiving...");
+                        byte[] buffer = new byte[1];
+                        int read = in.read(buffer);
+
+                        if (read == -1) {
+                            Log.d(tag, "Closed connection");
+                            connected = false;
+                            return;
+                        } else if (read > 0) {
+                            //convert our 1 byte to an int lol
+                            //wow this is bad but it just needs to work for mac
+                            len = (buffer[0] & 0xFF);
+                            //len = (ByteBuffer.wrap(buffer)).getInt();
+                            if (len > 0) //otherwise we're still dealing with the kb of null we sent
+                                break;
+                        }
+                    }
+
+                    while (teamsFile.length() < len) {
+                        Log.d(tag, "Receiving teams...");
+                        byte[] buffer = new byte[1024];
+                        int read = in.read(buffer);
+
+                        if (read == -1) { //we'll try again when we submit
+                            Log.d(tag, "Closed connection");
+                            connected = false;
+                            return;
+                        } else if (read > 0) {
+                            teamsFile += new String(buffer).replace("\0", "");
+                        }
+                    }
+
+                    recived = true;
+                }
+
+                /*String[] tmp = teamsFile.split("\\r?\\n");
+                teams = new int[tmp.length];
+                for (int i = 0; i < tmp.length; i++){
+                    teams[i] = Integer.parseInt(tmp[i]);
+                }*/
+                teams = teamsFile.split("\\r?\\n");
+
+                //now we load our template
                 try {
                     loadTemplate(new JSONArray(template));
                 } catch (JSONException ex) {
                     ex.printStackTrace();
                 }
+
             }
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -581,6 +643,7 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             String match = obj.get("match").toString();
+
             if (netType == networkingType.none) {
                 //check if external storage is mounted and writable
                 if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
@@ -806,6 +869,21 @@ public class MainActivity extends AppCompatActivity {
         } else {
             try {
                 for (final QuestionView i : questions) {
+                    Log.e(tag, i.getJSONLabel());
+                    if (i.getJSONLabel().equals("robot") || i.getJSONLabel().equals("match")) {
+                        String x = i.getValue().toString();
+                        if (x == null || x == "" || x.equals(null) || x.equals("") || x == "0" || x.equals("0")) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(getApplicationContext(), "Please fill in match/robot number", Toast.LENGTH_SHORT)
+                                            .show();
+                                }
+                            });
+
+                            return null;
+                        }
+                    }
                     obj.put(i.getJSONLabel(), i.getValue());
 
                     runOnUiThread(new Runnable() {

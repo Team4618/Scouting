@@ -22,6 +22,11 @@ class Sort:
 
         self.questionsFrame.pack(fill=BOTH)
         self.questionsListBox.pack(fill=BOTH)
+        self.reverseButton = Button(self.questionsFrame, text="Reverse order")
+
+        self.sortedLB = Listbox(self.questionsFrame, selectmode=SINGLE)
+        self.sortedLB.pack(fill=BOTH)
+        self.reverseButton.pack(anchor=SE)
 
     def refreshQuestions(self):
 
@@ -33,16 +38,16 @@ class Sort:
                 self.questionsListBox.insert(END, i['question'])
 
     def selectQuestion(self, *args):
+        self.reverseButton.destroy()
         question = self.questionsListBox.get(self.questionsListBox.curselection())
         self.reversed = False
 
-        sortWindow = Toplevel()
-        sortedListBox = Listbox(sortWindow)
-        reverseButton = Button(sortWindow, text="Reverse order", command=lambda: self.reverse(question, sortedListBox))
+        sortedListBox = self.sortedLB
+        self.reverseButton = Button(self.questionsFrame, text="Reverse order",
+                                    command=lambda: self.reverse(question, sortedListBox))
+        self.reverseButton.pack(anchor=SE)
 
         self.updateSort(question, sortedListBox, reversed=self.reversed)
-        sortedListBox.pack(anchor=NW, fill=BOTH)
-        reverseButton.pack(anchor=NE)
 
     def reverse(self, question, listBox):
         self.reversed = not self.reversed
@@ -69,7 +74,6 @@ class Sort:
             if file.lower().endswith(".json"):
                 with open(GUI.filedir + '\\' + file) as f:
                     fileJson = loadJSON(f)
-                    print(file)
 
                 for i in fileJson:
                     try:

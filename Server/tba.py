@@ -117,8 +117,10 @@ def getTeams(eventKey):
 
 
 if __name__ == "__main__":
-    print(getTeamInfo(254))
-    print()
-    print(getTeamEvents(254))
-    print()
-    print(getTeams('2018oncmp1'))
+    with open('teamnumbers.txt', 'w+') as f:
+        x = requests.get(baseUrl + "event/2019onham/teams/simple", headers=headers).json()
+        print(x)
+
+        for i in x:
+            f.write(str(i['team_number']))
+            f.write('\n')
