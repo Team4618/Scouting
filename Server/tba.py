@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from os import path
 
 import requests
 
@@ -65,20 +66,25 @@ def getTeamInfo(teamNumber):
         toReturn['attendedEvents'] = attendedEvents
 
         # get teams media
-        picture = "files/images/default.jpg"  # default image
+        from GUI import filedir
 
-        # requests all the images that you would usually see on the tba website
-        teamMedia = requests.get(baseUrl + "team/frc{}/media/{}".format(teamNumber, year), headers=headers).json()
+        picture = "{}/images/default.jpg".format(filedir)  # default image
 
-        # look through everything, take images that are hosted on either Imgur or Instagram, and download the first one
-        for i in teamMedia:
-            if i["type"] == "imgur" or i["type"] == "instagram-image":
-                image = requests.get(i['direct_url'], allow_redirects=True)
+        if path.isfile('{}/images/{}.jpg'.format(filedir, teamNumber)):
+            picture = "{}/images/{}.jpg".format(filedir, teamNumber)
+        else:
+            # requests all the images that you would usually see on the tba website
+            teamMedia = requests.get(baseUrl + "team/frc{}/media/{}".format(teamNumber, year), headers=headers).json()
 
-                with open("files/images/{}.jpg".format(teamNumber), 'wb') as img:
-                    img.write(image.content)
+            # look through everything, take images that are hosted on either Imgur or Instagram, and download the first one
+            for i in teamMedia:
+                if i["type"] == "imgur" or i["type"] == "instagram-image":
+                    image = requests.get(i['direct_url'], allow_redirects=True)
 
-                picture = "files/images/{}.jpg".format(teamNumber)
+                    with open("{}/images/{}.jpg".format(filedir, teamNumber), 'wb') as img:
+                        img.write(image.content)
+
+                    picture = "{}/images/{}.jpg".format(filedir, teamNumber)
 
         toReturn['media'] = picture
         return toReturn

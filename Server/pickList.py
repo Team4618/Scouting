@@ -6,6 +6,7 @@ from tkinter import *
 from tkinter.filedialog import asksaveasfilename
 from tkinter.ttk import *
 
+import matplotlib.pyplot as plt
 from PIL import Image, ImageTk
 
 import GUI
@@ -21,6 +22,7 @@ class PickList:
         self.tags = []
         self.teams = []
         self.remainingTeams = []
+        self.currentTeam = None
         self.parent = parent
         # team picking page of notebook
         self.page = Frame(parent)
@@ -158,6 +160,7 @@ class PickList:
         # do we? idk? this whole thing has gone to crap and i cant wait to nuke it
 
         team = Team(teamNumber)
+        self.currentTeam = team
 
         teamname = team.name
 
@@ -202,13 +205,14 @@ class PickList:
         # setup scroll bars and listbox to display the data
         scrollx = Scrollbar(scoutingDataFrame, orient=HORIZONTAL)
         scrolly = Scrollbar(scoutingDataFrame)
-        scoutingDataLB = Listbox(scoutingDataFrame, xscrollcommand=scrollx.set, yscrollcommand=scrolly.set)
-        scrollx.config(command=scoutingDataLB.xview)
-        scrolly.config(command=scoutingDataLB.yview)
+        self.scoutingDataLB = Listbox(scoutingDataFrame, xscrollcommand=scrollx.set, yscrollcommand=scrolly.set)
+        self.scoutingDataLB.bind("<Double-Button-1>", self.graph)
+        scrollx.config(command=self.scoutingDataLB.xview)
+        scrolly.config(command=self.scoutingDataLB.yview)
 
         scrollx.grid(row=1, column=0, sticky=EW)
         scrolly.grid(row=0, column=1, sticky=NS)
-        scoutingDataLB.grid(row=0, column=0, sticky=NSEW)
+        self.scoutingDataLB.grid(row=0, column=0, sticky=NSEW)
         scoutingDataFrame.columnconfigure(0, weight=1)
 
         # setup seperate box for comments because massimo wants it
@@ -270,7 +274,7 @@ class PickList:
                     pass
 
             # add this question to our data output
-            scoutingDataLB.insert(END, question + " : " + str(round((float(value) / increments[key]), 2)))
+            self.scoutingDataLB.insert(END, question + " : " + str(round((float(value) / increments[key]), 2)))
 
         for key, value in nonInts.items():
             # find the question
@@ -285,14 +289,14 @@ class PickList:
                         pass
 
                 # add it to our box/output
-                scoutingDataLB.insert(END, question + ":")
+                self.scoutingDataLB.insert(END, question + ":")
 
             for i in value:
                 if i.strip() != '':
                     if key == "comments":
                         commentsLB.insert(END, "    " + i)
                     else:
-                        scoutingDataLB.insert(END, "    " + i)
+                        self.scoutingDataLB.insert(END, "    " + i)
 
     def savePickList(self):
         file = asksaveasfilename(initialdir=GUI.filedir, title="Save Picklist", filetypes=(("Text files", "*.txt"),))
@@ -398,7 +402,34 @@ class PickList:
 
         self.remainingTeams = self.teams
 
-    '''def graph(self, data):
+    def graph(self, *args):
+        # load template
+        with open("template.json", "r") as f:
+            template = loadJSON(f)
+
+        item = self.scoutingDataLB.get(self.scoutingDataLB.curselection())
+        label = None
+        # item should be a question (possibly with data (INT))
+        # get JSONlabel
+        for i in template:
+            try:
+                if i['question'] in item:
+                    label = i['jsonLabel']
+            except KeyError:
+                pass
+
+        if label is None:
+            return
+
+        data = []
+        for key_, value_ in self.currentTeam.JSONdata.items():
+            for key, value in value_.items():
+                if key == label:
+                    data.append(value)
+
+        self.__graph__(data)
+
+    def __graph__(self, data):
         # data should be an array of bools or ints
         dataType = type(data[0])
 
@@ -412,5 +443,30 @@ class PickList:
                     labels.append(toAdd)
         else:
             return
-        # TODO: add the data into an array and display the chart
-        # https://matplotlib.org/gallery/pie_and_polar_charts/pie_features.html'''
+
+        # add the actual data (amount of occurrences per label)
+        occurrences = []
+        if dataType == bool:
+            occurrences = [0, 0]
+            true = 0
+            for i in data:
+                true += 1 if i else 0
+
+            occurrences[0] = true
+            occurrences[1] = len(data) - true
+
+        elif dataType == int:
+            for i in labels:
+                occurrences.append(0)
+
+            for i in data:
+                index = labels.index(str(i))
+
+                occurrences[index] += 1
+
+        fig1, ax1 = plt.subplots()
+
+        ax1.pie(occurrences, labels=labels, autopct='%.2f')
+        ax1.axis("equal")
+
+        plt.show()
