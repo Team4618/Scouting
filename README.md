@@ -12,6 +12,8 @@ Requirements to run server:
   * [openpyxl](https://openpyxl.readthedocs.io/en/stable/)
   * [PyQRCode](https://pypi.org/project/PyQRCode/)
   * [Pillow](https://python-pillow.org/)
+  
+  Additionally, you can refer to [requirements.txt](https://github.com/Team4618/Scouting/blob/master/Server/requirements.txt)
 * Bluetooth 4.0+
 
 To use everything together:
